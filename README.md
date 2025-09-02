@@ -1,8 +1,8 @@
 # ollama-chats v1.9.10
-Ollama chat client in Vue, everything you need to do your private text rpg in browser, with any amount of different characters, rag, per character context and more.
+Ollama chat client in Vue, everything you need to do your private text rpg in browser, with any amount of different characters, rag, per character context and more. **Now supports OpenRouter API!**
 
 ## What this is..
-This "project" is a single web page desktop interface for chatting with your local Ollama server. It doesn't use any libraries apart from Vue and can be opened in browser as a regular web page.
+This "project" is a single web page desktop interface for chatting with your local Ollama server or OpenRouter API. It doesn't use any libraries apart from Vue and can be opened in browser as a regular web page.
 
 
 It looks like this:
@@ -36,6 +36,24 @@ Hopefully in future we might run it directly with Ollama, but not yet.
 
 ## Installation:
 There is not much to install, it's a single index.html.
+
+### Option 1: Using with OpenRouter API (Cloud-based)
+1. Get your API key from [OpenRouter](https://openrouter.ai/)
+2. Open `index.html` in your browser
+3. In the connection settings:
+   - Set URL to: `https://openrouter.ai/api/v1`
+   - Enter your OpenRouter API key
+4. The app will automatically detect OpenRouter and adapt the interface accordingly
+
+**OpenRouter Features:**
+- ✅ Access to many state-of-the-art models (GPT-4, Claude, Llama, etc.)
+- ✅ No local installation required
+- ✅ Pay-per-use pricing
+- ❌ Pull/download models (not applicable)
+- ❌ RAG/Embeddings (not supported by OpenRouter API)
+- ❌ Fully offline usage
+
+### Option 2: Using with Local Ollama Server
 The file needs to connect to your local Ollama server and you have 2 choices for that:
 * You can install a local web-server as a reverse proxy.
 * If Ollama runs on your own computer, a bad way is to configure Ollama to allow any Origin header. As it still runs only on your local 127.0.0.1 address, others still won't be able to connect to it directly. However, sites you visit may use malicious code to connect to your local network as you run your browser on your local computer. So any site you open theoretically will be able to exploit your Ollaama with this.
@@ -88,6 +106,14 @@ You will need to edit ollama.service. i use Nano editor, replace it with what yo
  
 ## Features:
 Now, let me list the features this thing has:
+
+**🆕 NEW: OpenRouter API Support**
+- Access to cutting-edge models like GPT-4, Claude, Llama 3.1, and many others
+- Simple API key configuration
+- Automatic detection and adaptation of interface
+- Note: Some features (model pulling, RAG/embeddings) are disabled when using OpenRouter as they're not applicable to cloud APIs
+
+**Core Features:**
 
 1. You can "prompt" the AI and see the replies in a chat form, as we all love. "Enter" button sends the reply, shift+enter allows making a line-break.
 2. You can ask AI for any amount of side-replies (alternative ones), by clicking on the arrow next to the message	or simply by clicking "right" arrow on the keyboard. Left arrow works as well). If you have some text typed in your prompt and you are editing it, arrows will not slide replies, obviously, for your convenience, as you may move cursor through the typed text. Same if you are editing something else, like settings.
