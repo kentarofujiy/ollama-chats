@@ -50,7 +50,7 @@ There is not much to install, it's a single index.html.
 - ✅ No local installation required
 - ✅ Pay-per-use pricing
 - ❌ Pull/download models (not applicable)
-- ❌ RAG/Embeddings (not supported by OpenRouter API)
+- ✅ RAG/Embeddings (can use separate Ollama instance via "Embeddings instance URL" setting)
 - ❌ Fully offline usage
 
 ### Option 2: Using with Local Ollama Server
