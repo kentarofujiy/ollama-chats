@@ -483,7 +483,7 @@
 									<br><br>
 								</div>
 							</div>
-							<div v-if='pState["pull"]' id='pull'>
+							<div v-if='pState["pull"] && !isOpenRouter()' id='pull'>
 								<br>
 								<div class='nobg'>
 									<p class='heading understroke green center'>Pull a model</p>
@@ -939,7 +939,8 @@
 									<td></td>
 									<td><span class='lnk nobgt' @click='list()' title='Reload models'><menun k='F6' t='Rld.mdls'/> </span></td>
 									<td></td>
-									<td><span class='lnk nobgt' @click='pToggle("pull")' title='Pull a model'><menun k='F7' t='Pull'/></span></td>
+									<td v-if='!isOpenRouter()'><span class='lnk nobgt' @click='pToggle("pull")' title='Pull a model'><menun k='F7' t='Pull'/></span></td>
+									<td v-else></td>
 									<td></td>
 									<td><span class='lnk nobgt' @click='this.prune()' title='Prune'><menun k='F8' t='Prune'/></span></td>
 									<td></td>
@@ -976,10 +977,17 @@
 				<template v-else>
 					<tr>
 						<td class='center nobg'>
-							Ollama url<br>
+							API URL<br>
 							<input v-model='this.config.url.v' class='understroke'/>
 							&nbsp;<span class='lnk' @click='this.config.url.v=this.def.configGlobal.url.v'>reset</span>
+							<br><small>Use http://127.0.0.1:11434 for Ollama or https://openrouter.ai/api/v1 for OpenRouter</small>
 							<br><br>
+							<template v-if='isOpenRouter()'>
+								API Key (required for OpenRouter)<br>
+								<input v-model='this.config.apiKey.v' class='understroke' type='password' placeholder='sk-or-v1-...'/>
+								&nbsp;<span class='lnk' @click='this.config.apiKey.v=this.def.configGlobal.apiKey.v'>reset</span>
+								<br><br>
+							</template>
 							<template v-if='this.connectionErr.length'>
 								<br>
 								<span class='lnk' @click='this.urlTest()'>Re-try</span><br><br>
@@ -2838,8 +2846,9 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 				taFontSize:					{ g:'design',name:'Font size of the input text areas',v:'14px',d:'Font size of the text in prompt, instr and system prompt text areas.',def:'14px',f:'',q:null,opt:false},
 				chatHeight:					{ g:'design',name:'Height of the chat log',v:'',d:"If you prefer a fixed chat log height with a scroller inside, set this to the desired height of your chat log. The valus is in pixels, use only a number, like '300'.",def:'',f:'',q:'logHeigh',opt:false},
 
-				url: 								{	g:'url',name:'URL',v:"http://127.0.0.1:11434",def:'http://127.0.0.1:11434',d:'URL of the Ollama service',q:null,opt:false,sess:true},
+				url: 								{	g:'url',name:'URL',v:"http://127.0.0.1:11434",def:'http://127.0.0.1:11434',d:'URL of the Ollama service or OpenRouter API (https://openrouter.ai/api/v1)',q:null,opt:false,sess:true},
 				urlEmb: 						{	g:'url',name:'Embeddings instance URL',v:"http://127.0.0.1:11434",def:'http://127.0.0.1:11434',d:"URL of the Ollama service to use for embeddings calculations. It can be the same but in that case every such request clears cache and causes prompt re-evaluation, so caching doesn't work with rag. I recommend running a second instance of Ollama on another port to handle embeddings.",q:null,opt:false,sess:true},
+				apiKey: 						{	g:'url',name:'API Key',v:"",def:'',d:'API Key for OpenRouter (required when using OpenRouter API). Leave empty for local Ollama.',q:null,opt:false,sess:true},
 
 				instrWithSideRating:{ g:'rating',name:'Stil use "instr" for side-replies when side-rating is on ',v:true,d:"Shoud your instruction (instr) be used when you request side-message with rated examples (ctrl+right). Instruction may interefere with the examples as AI gets confused with what you want from it, there are bad examples, good examples and also an instruction for new reply, not mentioning the context. You may switch this off. It has effect only when you request for rated side-replies, otherwise this setting is not used.",def:true, f:'cb',q:false,qn:'s-rate',opt:false },
 				badExForSideReply:	{ g:'rating',name:'Use that many -ed side replies for new ones',v:3,d:'When you ask for one more side message from AI clicking ">", you just get a reply generated on the context above. But if you click "ctrl+right", your rated messages are shown to AI as examples. However, showing many negative ones may have the opposite effect as AI just starts copying them. This number defines how many random bad messages from your last turn should be given to AI as an example of how it shouldn\'t talk. Also, setting this high will result in a serious reduction of context window memory. 0 means disable.',def:3,f:'',q:false,qn:'b-ex',opt:false },
@@ -5067,8 +5076,13 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 			this.modelsLoading.done		=0;
 			this.w(`listing models`);
 			
-			await fetch(this.url()+"/api/tags",{
+			const isOpenRouter = this.isOpenRouter();
+			const endpoint = isOpenRouter ? "/models" : "/api/tags";
+			const headers = this.getHeaders();
+			
+			await fetch(this.url() + endpoint, {
 				"method": "GET",
+				"headers": headers
 			}).then(r=>{
 				if(!r.ok) throw new Error(r.statusText);
 				return r.text();
@@ -5085,25 +5099,50 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 				this.w({modelsDL:res});
 				let mdls=[];
 				this.modelsLoading.inited	=2;
-				this.modelsLoading.total	=Object.keys(res.models).length;
 				
-				for(const m of Object.keys(res.models).sort((a,b)=>{
-					return res.models[a].name.localeCompare(res.models[b].name.toLowerCase());
-				})) {
-					let md=res.models[m];
-					mdls.push({
-						tag:	md.name,
-						n:		`${md.name} (${md.details.parameter_size} ${md.details.quantization_level})`,
-						mt:		md.modified_at,
-						s:		md.size,
-						ps:		md.details.parameter_size,
-						q:		md.details.quantization_level,
-						ctx:	null,
-					});
-					await this.modelData(mdls,mdls.length-1);
-					this.w(`processed model ${md.name}`);
-					this.modelsLoading.done++;
+				if (isOpenRouter) {
+					// OpenRouter API response format
+					this.modelsLoading.total = res.data.length;
+					
+					for(const m of res.data.sort((a,b) => {
+						return a.id.localeCompare(b.id.toLowerCase());
+					})) {
+						mdls.push({
+							tag:	m.id,
+							n:		`${m.id}`,
+							mt:		null,
+							s:		null,
+							ps:		null,
+							q:		null,
+							ctx:	m.context_length || null,
+							emb:	false // OpenRouter doesn't have embedding models in this context
+						});
+						this.w(`processed model ${m.id}`);
+						this.modelsLoading.done++;
+					}
+				} else {
+					// Ollama API response format
+					this.modelsLoading.total = Object.keys(res.models).length;
+					
+					for(const m of Object.keys(res.models).sort((a,b)=>{
+						return res.models[a].name.localeCompare(res.models[b].name.toLowerCase());
+					})) {
+						let md=res.models[m];
+						mdls.push({
+							tag:	md.name,
+							n:		`${md.name} (${md.details.parameter_size} ${md.details.quantization_level})`,
+							mt:		md.modified_at,
+							s:		md.size,
+							ps:		md.details.parameter_size,
+							q:		md.details.quantization_level,
+							ctx:	null,
+						});
+						await this.modelData(mdls,mdls.length-1);
+						this.w(`processed model ${md.name}`);
+						this.modelsLoading.done++;
+					}
 				}
+				
 				this.w('processed new models');
 				for(const m of mdls) {
 					if(m.emb) {
@@ -5118,7 +5157,9 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					this.working			=0;
 					this.connection		=1;
 					this.connectionErr='';
-					this.pToggle('pull',1);
+					if (!isOpenRouter) {
+						this.pToggle('pull',1);
+					}
 					return;
 				}
 				
@@ -5475,6 +5516,12 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 			return s;
 		},
 		async embed(txt) {
+			if(this.isOpenRouter()) {
+				this.w('Embeddings not supported for OpenRouter API');
+				this.rag.err='Embeddings not supported for OpenRouter API';
+				return [];
+			}
+			
 			if(txt==null||!txt.length||!this.settings.req.modelEmb.v.l.length) return;
 			let opt						={};
 			opt['model']			=this.settings.req.modelEmb.v.l[this.settings.req.modelEmb.v.v].tag;
@@ -6612,32 +6659,62 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					trt=false;
 				}
 				
+				const isOpenRouter = this.isOpenRouter();
 				const endpoint={
 					chat:{
-						url:	"/api/chat",
-						param:'messages',
-						resp:	['message','content']
+						url:	isOpenRouter ? "/chat/completions" : "/api/chat",
+						param: isOpenRouter ? 'messages' : 'messages',
+						resp:	isOpenRouter ? ['choices', 0, 'delta', 'content'] : ['message','content']
 					},
 					generate: {
-						url:	"/api/generate",
-						param:'prompt',
+						url:	isOpenRouter ? "/chat/completions" : "/api/generate",
+						param: isOpenRouter ? 'messages' : 'prompt',
 						images: 'images',
-						resp:	['response']
+						resp:	isOpenRouter ? ['choices', 0, 'delta', 'content'] : ['response']
 					}
 				};
 
 				const ep=ms.raw?'generate':'chat';
 				
 				const final=t.chatAiMs2Tmpl(ms);
-				opt[endpoint[ep].param]=final.prompt;
-
-				if(final.images.length) {
-					if(!endpoint[ep].hasOwnProperty('images')) {
-						this.w(`Don't know how to use images for endpoint ${ep}!`)
-					} else {
-						opt[endpoint[ep].images]=final.images;
-						for(const im in final.images) {
-							//opt[endpoint[ep].param]+=` [img-${im}] `
+				
+				// Prepare request body based on API type
+				if (isOpenRouter) {
+					// OpenRouter uses OpenAI-compatible format
+					opt.messages = Array.isArray(final.prompt) ? final.prompt : [];
+					opt.model = t.models[t.settings.req.model.v.v].tag;
+					delete opt.raw; // OpenRouter doesn't use this
+					delete opt.stream; // Will be handled differently
+					opt.stream = true;
+					
+					// Handle images for OpenRouter (convert to base64 URLs if needed)
+					if(final.images.length && opt.messages.length > 0) {
+						const lastMessage = opt.messages[opt.messages.length - 1];
+						if (lastMessage.role === 'user') {
+							if (!lastMessage.content || typeof lastMessage.content === 'string') {
+								lastMessage.content = [
+									{ type: 'text', text: lastMessage.content || '' }
+								];
+							}
+							for(const img of final.images) {
+								lastMessage.content.push({
+									type: 'image_url',
+									image_url: { url: `data:image/jpeg;base64,${img}` }
+								});
+							}
+						}
+					}
+				} else {
+					// Ollama format
+					opt[endpoint[ep].param]=final.prompt;
+					if(final.images.length) {
+						if(!endpoint[ep].hasOwnProperty('images')) {
+							this.w(`Don't know how to use images for endpoint ${ep}!`)
+						} else {
+							opt[endpoint[ep].images]=final.images;
+							for(const im in final.images) {
+								//opt[endpoint[ep].param]+=` [img-${im}] `
+							}
 						}
 					}
 				}
@@ -6649,6 +6726,7 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 				try {
 					r=await fetch(t.url()+endpoint[ep].url,{
 						"method": "POST",
+						"headers": t.getHeaders(),
 						"body": 	JSON.stringify(opt)
 					});
 					if(!r.ok) throw new Error(r.statusText);
@@ -6692,7 +6770,8 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					bufValue+=decoder.decode(value);
 
 					errorJson=false;
-					const splitter='\n',parsed=[];
+					const splitter = isOpenRouter ? '\n\n' : '\n';
+					const parsed=[];
 					const chnks=bufValue.split(splitter);
 					t.w({cnks:chnks});
 					let offset=0;
@@ -6702,6 +6781,18 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						if(!ch.length) {
 							offset+=splitter.length;
 							continue;
+						}
+						
+						// Handle OpenRouter SSE format
+						if (isOpenRouter) {
+							if (ch.startsWith('data: ')) {
+								ch = ch.substring(6);
+								if (ch === '[DONE]') {
+									continue; // Skip the [DONE] marker
+								}
+							} else {
+								continue; // Skip non-data lines
+							}
 						}
 
 						try { 
@@ -6723,7 +6814,21 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					//bufValue='';
 					for(let res of parsed) {
 						let rf=res;
-						for(const p of endpoint[ep].resp) { rf=rf[p] }
+						
+						// Navigate through the response structure based on API type
+						for(const p of endpoint[ep].resp) { 
+							if (rf && rf.hasOwnProperty(p)) {
+								rf = rf[p];
+							} else {
+								rf = '';
+								break;
+							}
+						}
+						
+						// Handle OpenRouter response format where content might be undefined
+						if (isOpenRouter && (rf === undefined || rf === null)) {
+							rf = '';
+						}
 
 						buf+=rf;
 						
@@ -7536,6 +7641,20 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 		url() {
 			return this.config.url.v;
 		},
+		isOpenRouter() {
+			return this.url().includes('openrouter.ai');
+		},
+		getHeaders() {
+			const headers = {
+				"Content-Type": "application/json"
+			};
+			if (this.isOpenRouter() && this.config.apiKey.v) {
+				headers["Authorization"] = `Bearer ${this.config.apiKey.v}`;
+				headers["HTTP-Referer"] = window.location.href;
+				headers["X-Title"] = "Ollama-Chats";
+			}
+			return headers;
+		},
 		async urlTest(url) {
 			if(this.working) {
 				this.w('working right now, leaving');
@@ -7556,8 +7675,13 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 			}
 			this.connectionErr='';
 
-			let res=await fetch(url+"/api/tags",{
+			const isOpenRouter = url.includes('openrouter.ai');
+			const endpoint = isOpenRouter ? "/models" : "/api/tags";
+			const headers = isOpenRouter ? this.getHeaders() : {};
+
+			let res=await fetch(url + endpoint, {
 				"method": "GET",
+				"headers": headers
 			}).then(r=>{
 				if(!r.ok) throw new Error(r.statusText);
 				return r;
