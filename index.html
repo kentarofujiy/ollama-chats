@@ -2767,7 +2767,8 @@ If you have single message mode enabled in settings (chat logic), all messages a
 Once log message is over, this part will finish the template. Current message text is empty, current char data equals to replier, previous message is the last one in the log.
 
 {{img}}[img-{{imgIndex}}]{{/img}}
-When you add images they should be attached to a certain message. To do that a template [img-0] is usually used, where 0 is index of the image. For example, in llama.cpp (used by ollama) all the text _before_ [img-N] (down to previous [img-N]) is used as a prefix for the image. Therefore it makes sense to put it into the end of the message. However, there is a thing i believe is a bug, if you have certain symbols in the prefix, like ":", everything is broken. That is why it is easier to put the placeholder into beginning of the message right now. This placeholder will replace the {{img}} in the messages loop. In other parts it is not used. {{imgIndex}} is automatically replaced with the id of the image in array that is sent to the server.'. 
+When you add images they should be attached to a certain message. To do that a template [img-0] is usually used, where 0 is index of the image. For example, in llama.cpp (used by ollama) all the text _before_ [img-N] (down to previous [img-N]) is used as a prefix for the image. Therefore it makes sense to put it into the end of the message. However, there is a thing i believe is a bug, if you have certain symbols in the prefix, like ":", everything is broken. That is why it is easier to put the placeholder into beginning of the message right now. This placeholder will replace the {{img}} in the messages loop. In other parts it is not used. {{imgIndex}} is automatically replaced with the id of the image in array that is sent to the server.
+
 
 All 6 parts should be there even if some are empty. Please note, certain chat modes add messages to the end of chat log, to additionally instruct your model.
 
