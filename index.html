@@ -5266,9 +5266,11 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					}
 				}
 				if(res.details.hasOwnProperty('family')) {
-					let tmp=res.details.family.match(/\bbert\b/i);
-					mdls[id].emb=tmp==null?false:true;
-					this.w(`${mdls[id].n} embedded status: ${mdls[id].emb}`);
+					// Check for embedding models by family (bert-based) or model name patterns
+					let isBertFamily = res.details.family.match(/\bbert\b/i);
+					let isEmbeddingName = mdls[id].n.match(/\bembed/i);
+					mdls[id].emb = (isBertFamily != null) || (isEmbeddingName != null);
+					this.w(`${mdls[id].n} embedded status: ${mdls[id].emb} (bert family: ${isBertFamily != null}, embed name: ${isEmbeddingName != null})`);
 				}
 			}).catch((error)=>{
 				this.connectionErr=error.message;
