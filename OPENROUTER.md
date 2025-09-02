@@ -24,20 +24,7 @@
 4. **Start Chatting!**
    - The interface will automatically adapt for OpenRouter
    - Features like "Pull" will be hidden (not applicable)
-   - RAG/Embeddings can use a separate Ollama instance (configure "Embeddings instance URL" in settings)
-
-## Hybrid Setup: OpenRouter + Ollama Embeddings
-
-You can use OpenRouter for chat completions while keeping Ollama for embeddings/RAG:
-
-1. **Set up OpenRouter as described above**
-2. **Install Ollama locally** for embeddings:
-   - Follow [Ollama installation guide](https://ollama.ai)
-   - Pull an embedding model: `ollama pull nomic-embed-text`
-3. **Configure hybrid setup**:
-   - Main "URL" should be: `https://openrouter.ai/api/v1`
-   - "Embeddings instance URL" should be: `http://127.0.0.1:11434` (your local Ollama)
-   - This allows you to use advanced OpenRouter models for chat while using local Ollama for embeddings
+   - RAG/Embeddings will be disabled (not supported)
 
 ## Cost Management
 

@@ -5516,9 +5516,9 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 			return s;
 		},
 		async embed(txt) {
-			if(this.isEmbeddingOpenRouter()) {
-				this.w('Embeddings not supported when Embeddings URL is set to OpenRouter API. Please use an Ollama server for embeddings.');
-				this.rag.err='Embeddings not supported when Embeddings URL is set to OpenRouter API. Please use an Ollama server for embeddings.';
+			if(this.isOpenRouter()) {
+				this.w('Embeddings not supported for OpenRouter API');
+				this.rag.err='Embeddings not supported for OpenRouter API';
 				return [];
 			}
 			
@@ -7643,9 +7643,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 		},
 		isOpenRouter() {
 			return this.url().includes('openrouter.ai');
-		},
-		isEmbeddingOpenRouter() {
-			return this.config.urlEmb.v.includes('openrouter.ai');
 		},
 		getHeaders() {
 			const headers = {
