@@ -405,7 +405,8 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					} this.def = def;
 
 					this.sessLoad();
-					this.urlTest().then(res => {
+					this.urlTest().then(async res => {
+						await this.initializeRAGSettings();
 						this.inited = 1;
 					});
 
@@ -2808,9 +2809,67 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						err: null
 					};
 				},
+				async checkEmbeddingModelAvailability() {
+					// For OpenRouter, embeddings are not supported
+					if (this.isOpenRouter()) {
+						this.w('OpenRouter detected, embeddings not supported');
+						return false;
+					}
+					
+					try {
+						// Try a simple embedding request to check if the model is available
+						const testResponse = await fetch(this.config.urlEmb.v + "/api/embeddings", {
+							"method": "POST",
+							"body": JSON.stringify({
+								model: 'nomic-embed-text:latest',
+								prompt: 'test'
+							})
+						});
+						
+						if (!testResponse.ok) {
+							this.w(`Embedding model availability check failed: ${testResponse.status} ${testResponse.statusText}`);
+							return false;
+						}
+						
+						this.w('Embedding model is available');
+						return true;
+					} catch (error) {
+						this.w(`Embedding model availability check error: ${error.message}`);
+						return false;
+					}
+				},
+				async initializeRAGSettings() {
+					// Clear any cached error states and validate RAG settings on startup
+					this.w('Initializing RAG settings');
+					
+					// Clear any previous RAG errors
+					if (this.rag) {
+						this.rag.err = null;
+					}
+					
+					// If RAG is enabled, check embedding model availability
+					if (this.config.rag.v) {
+						const isAvailable = await this.checkEmbeddingModelAvailability();
+						if (!isAvailable) {
+							this.w('RAG is enabled but embedding model is not available. Users will be notified when they try to use RAG features.');
+							// Don't disable RAG here - let users try and get informed errors per operation
+						} else {
+							this.w('RAG is enabled and embedding model is available');
+						}
+					} else {
+						this.w('RAG is disabled in settings');
+					}
+				},
 				async ragU(u) {
 					if (u == null) return;
-					// Since embedding model is hardcoded, no need to check if models are available
+					
+					// Check if embedding model is available before proceeding
+					const isAvailable = await this.checkEmbeddingModelAvailability();
+					if (!isAvailable) {
+						this.w('Embedding model not available, skipping RAG update');
+						return;
+					}
+					
 					this.workingRag = true;
 					this.w(`updating rag for user ${u}`);
 
@@ -4337,94 +4396,102 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					this.rag['g'].last = [];
 					if (h.rag) {
 						this.w("rag is enabled");
-						// Since embedding model is hardcoded, skip the model availability check
-						this.w(`searching in rag`);
-						let ragp = 1;
-						if (!/^(\d{1,14})$/.test(this.config.ragPast.v)) {
-							this.config.ragPast.v = this.config.ragPast.def;
-							alert(`You have a bad configured value for the ${this.config.ragPast.name} parameter, resetted it to: ${this.config.ragPast.v}`);
-						}
-						ragp = this.config.ragPast.v;
-						this.w(`rag past messages to use: ${ragp}`);
-						let rags = [];
-						if (ragp > 0) {
-							for (let i = finalTurn; i >= 0; i--) {
-								rags.push(final[i].content);
-								ragp--;
-								if (ragp == 0) break;
-							}
-						}
-						this.w({ 'rag search content': rags });
-
-						if ((this.rag['g'].t.length + this.rag[h.aId].t.length) == 0) {
-							this.w('global and user rags are empty, skipping rag');
-						} else if (rags.length == 0) {
-							this.w('rag prompt is empty, skipping rag');
+						
+						// Check if embedding model is available before proceeding with RAG
+						const isEmbeddingAvailable = await this.checkEmbeddingModelAvailability();
+						if (!isEmbeddingAvailable) {
+							this.w('Embedding model not available, skipping RAG for this message');
+							alert(`Memories (RAG) feature is enabled but the embedding model 'nomic-embed-text:latest' is not available on your embedding server (${this.config.urlEmb.v}). Please ensure the model is pulled/downloaded and the embedding URL is correctly configured. RAG will be skipped for this message.`);
 						} else {
-							this.msgStatusSetDo(h.msg, 'embedding prompt');
-							let e = await this.embed(`please find top related content to: """${rags.join("\n")}"""`); //
-							this.msgStatusSetDo(h.msg, 'embedding prompt');
-							if (!e.length) {
-								const errorMsg = this.rag.err ? `Embedding error: ${this.rag.err}` : "Embedding returned empty result";
-								this.w(`RAG skip for this message: ${errorMsg}`);
-								alert(`Memories (RAG) feature skipped for this message due to embedding error: ${errorMsg}. Check your embedding URL (${this.config.urlEmb.v}) and ensure the embedding model 'nomic-embed-text:latest' is available.`);
-								// Don't disable RAG permanently, just skip it for this message
-							} else {
-								const memb = 'nomic-embed-text:latest'; // Hardcoded embedding model
-								let rv = { g: [] }; rv[h.aId] = [];
-								let ra = {};
-								let min = '';
-								if (/^\d{1,14}(:?\.\d{1,14})?$/.test(this.config.ragMinSmlr.v)) {
-									min = this.config.ragMinSmlr.v;
-								} else if (this.config.ragMinSmlr.v !== '' && this.config.ragMinSmlr.v != null) {
-									alert("You have a wrong value for 'Minimum required similarity value', ignoring it");
-								}
-								this.w(`lowest similarity configured is: ${min}`);
-
-								ra[h.aId] = /^\d{1,14}$/.test(this.config.ragUAmount.v) ? this.config.ragUAmount.v : 2;
-								ra['g'] = /^\d{1,14}$/.test(this.config.ragGAmount.v) ? this.config.ragGAmount.v : 2;
-
-								this.msgStatusSetDo(h.msg, 'embedding search');
-
-								for (const r of ['g', h.aId]) {
-									if (memb != this.rag[r].modelEmb) {
-										this.w(`embedding model has changed from ${this.rag[r].modelEmb} -> ${memb}, let's re-evaluate rag`);
-										this.rag[r].v = [];
-										await this.ragU(r);
-									}
-									for (let i = 0; i < this.rag[r].v.length; i++) { //>
-										const R = this.rag[r].v[i];
-										const cos = this.cosine(R[0], e[0]);
-										this.w(`got cos=${cos} for ${e[1]}=${R[1]}`);
-										if (min !== '' && cos < min) { //>
-											this.w(`Similarity is lower than defined ${cos}<${this.config.ragMinSmlr.v}`); //>
-											continue;
-										}
-										rv[r].push({ i: i, cos: cos });
-									}
-									this.w({ rv: rv });
-									if (rv[r].length) {
-										const upto = rv[r].length > ra[r] ? ra[r] : rv[r].length;
-										this.w(`rag amount: ${ra[r]}, rag upto: ${upto}`);
-										rv[r] = rv[r].sort((a, b) => (a.cos > b.cos ? -1 : 1)).slice(0, upto);
-										this.w({ ragtouse: rv[r] });
-										if (this.config.ragShuffle.v) {
-											this.w('shuffling the rag results as requested in config');
-											rv[r] = sh(rv[r], upto);
-										} else {
-											this.w('shuffling is disabled, using rag as is');
-										}
-										for (const R of rv[r]) {
-											this.rag[r].last.push({
-												t: this.rag[r].v[R.i][1], id: R.i,
-												cos: R.cos
-											});
-											adds.rag.push(this.rag[r].v[R.i][1]);
-										}
-									}
-									this.w({ 'rag last of user': r, is: this.rag[r].last });
+							this.w(`searching in rag`);
+							let ragp = 1;
+							if (!/^(\d{1,14})$/.test(this.config.ragPast.v)) {
+								this.config.ragPast.v = this.config.ragPast.def;
+								alert(`You have a bad configured value for the ${this.config.ragPast.name} parameter, resetted it to: ${this.config.ragPast.v}`);
+							}
+							ragp = this.config.ragPast.v;
+							this.w(`rag past messages to use: ${ragp}`);
+							let rags = [];
+							if (ragp > 0) {
+								for (let i = finalTurn; i >= 0; i--) {
+									rags.push(final[i].content);
+									ragp--;
+									if (ragp == 0) break;
 								}
 							}
+							this.w({ 'rag search content': rags });
+
+							if ((this.rag['g'].t.length + this.rag[h.aId].t.length) == 0) {
+								this.w('global and user rags are empty, skipping rag');
+							} else if (rags.length == 0) {
+								this.w('rag prompt is empty, skipping rag');
+							} else {
+								this.msgStatusSetDo(h.msg, 'embedding prompt');
+								let e = await this.embed(`please find top related content to: """${rags.join("\n")}"""`); //
+								this.msgStatusSetDo(h.msg, 'embedding prompt');
+								if (!e.length) {
+									const errorMsg = this.rag.err ? `Embedding error: ${this.rag.err}` : "Embedding returned empty result";
+									this.w(`RAG skip for this message: ${errorMsg}`);
+									alert(`Memories (RAG) feature skipped for this message due to embedding error: ${errorMsg}. Check your embedding URL (${this.config.urlEmb.v}) and ensure the embedding model 'nomic-embed-text:latest' is available.`);
+									// Don't disable RAG permanently, just skip it for this message
+								} else {
+									const memb = 'nomic-embed-text:latest'; // Hardcoded embedding model
+									let rv = { g: [] }; rv[h.aId] = [];
+									let ra = {};
+									let min = '';
+									if (/^\d{1,14}(:?\.\d{1,14})?$/.test(this.config.ragMinSmlr.v)) {
+										min = this.config.ragMinSmlr.v;
+									} else if (this.config.ragMinSmlr.v !== '' && this.config.ragMinSmlr.v != null) {
+										alert("You have a wrong value for 'Minimum required similarity value', ignoring it");
+									}
+									this.w(`lowest similarity configured is: ${min}`);
+
+									ra[h.aId] = /^\d{1,14}$/.test(this.config.ragUAmount.v) ? this.config.ragUAmount.v : 2;
+									ra['g'] = /^\d{1,14}$/.test(this.config.ragGAmount.v) ? this.config.ragGAmount.v : 2;
+
+									this.msgStatusSetDo(h.msg, 'embedding search');
+
+									for (const r of ['g', h.aId]) {
+										if (memb != this.rag[r].modelEmb) {
+											this.w(`embedding model has changed from ${this.rag[r].modelEmb} -> ${memb}, let's re-evaluate rag`);
+											this.rag[r].v = [];
+											await this.ragU(r);
+										}
+										for (let i = 0; i < this.rag[r].v.length; i++) { //>
+											const R = this.rag[r].v[i];
+											const cos = this.cosine(R[0], e[0]);
+											this.w(`got cos=${cos} for ${e[1]}=${R[1]}`);
+											if (min !== '' && cos < min) { //>
+												this.w(`Similarity is lower than defined ${cos}<${this.config.ragMinSmlr.v}`); //>
+												continue;
+											}
+											rv[r].push({ i: i, cos: cos });
+										}
+										this.w({ rv: rv });
+										if (rv[r].length) {
+											const upto = rv[r].length > ra[r] ? ra[r] : rv[r].length;
+											this.w(`rag amount: ${ra[r]}, rag upto: ${upto}`);
+											rv[r] = rv[r].sort((a, b) => (a.cos > b.cos ? -1 : 1)).slice(0, upto);
+											this.w({ ragtouse: rv[r] });
+											if (this.config.ragShuffle.v) {
+												this.w('shuffling the rag results as requested in config');
+												rv[r] = sh(rv[r], upto);
+											} else {
+												this.w('shuffling is disabled, using rag as is');
+											}
+											for (const R of rv[r]) {
+												this.rag[r].last.push({
+													t: this.rag[r].v[R.i][1], id: R.i,
+													cos: R.cos
+												});
+												adds.rag.push(this.rag[r].v[R.i][1]);
+											}
+										}
+										this.w({ 'rag last of user': r, is: this.rag[r].last });
+									}
+								}
+							}
+						}
 						}
 						this.msgStatusSetDo(h.msg, 'templating');
 					} else { this.w(`memories are disabled in config`) }
