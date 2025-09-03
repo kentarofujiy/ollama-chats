@@ -1,0 +1,1055 @@
+ .tmpl {
+     display: none;
+ }
+
+ * {
+     font-size: 14px;
+     font-family: Arial;
+     transition: all 0.71s ease-out;
+
+ }
+
+ ::selection {
+     color: #10ee10;
+     background: #103510;
+ }
+
+ body {
+     background-color: #141414;
+     color: #e0e0e0;
+     background-size: 100% auto;
+     background-repeat: repeat-y;
+ }
+
+ textarea {
+     font-size: 16px;
+
+     background-color: rgba(0, 0, 0, 0.45);
+     color: #e0e0e0;
+
+     width: 100%;
+     box-sizing: border-box;
+     border-color: silver;
+     border-radius: 5px;
+     border-image: linear-gradient(#103510, #141414, #103510) 2/3px 2px 3px 2px;
+     box-shadow: 0px 0px 7px rgba(0, 0, 7, 0.7);
+     padding: 10 10 10 10;
+ }
+
+ textarea:focus {
+     outline: #e0e0e0 solid 1px;
+     background-color: rgba(0, 0, 0, 0.45);
+     border-color: silver;
+ }
+
+ input {
+     font-size: 16px;
+     background-color: rgba(0, 0, 0, 0.45);
+     color: #15ea15;
+     accent-color: darkgreen;
+     outline-color: transparent;
+     box-sizing: border-box;
+     border-color: transparent;
+     border-width: 0 0 1 0;
+     border-radius: 5px;
+     padding: 4 3 2 3;
+     text-align: center;
+ }
+
+ input:focus {
+     outline: none;
+ }
+
+ input[type=checkbox] {
+     accent-color: darkgreen;
+     padding: 3 3 3 3;
+ }
+
+ input[type="file"] {
+     display: none;
+ }
+
+ select {
+     font-size: 16px;
+     color: mediumseagreen;
+     background-color: rgba(0, 0, 0, 0.45);
+
+     box-sizing: border-box;
+     border-color: #e0e0e0;
+
+     padding: 5 2 2 2;
+     border-image: linear-gradient(#103510, #141414, #103510) 2/3px 2px 3px 2px;
+ }
+
+ #app {
+     width: 100%;
+ }
+
+ li {
+     margin-bottom: 7px;
+ }
+
+ #bg {
+     position: absolute;
+     z-index: -1;
+     width: 100%;
+     height: 100%;
+ }
+
+ .imgEmbed {
+     width: 150px;
+ }
+
+ .imgBig {
+     width: 100%;
+ }
+
+ .imgPrompt {
+     width: 35px;
+ }
+
+ #imgAdd {
+     padding-top: 0px;
+ }
+
+ #imgAddList {
+     padding: 2 5 2 2;
+ }
+
+ .chatLogImg {
+     padding: 2 2 2 5;
+ }
+
+ #chat {
+     width: 800px;
+     max-width: 800px;
+     margin: auto;
+     height: 100%;
+     border-spacing: 13px 10px;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/2px 0px 2px 0px;
+ }
+
+ #chat td {
+     border-width: 0px;
+     vertical-align: top;
+     border-radius: 7px;
+     padding: 7 10 5 10;
+ }
+
+ #chat #nicks td {
+     text-align: left;
+     padding: 2 5 2 5;
+     vertical-align: middle;
+ }
+
+ .talkers {
+     width: 100%;
+     border-spacing: 0;
+     text-align: center;
+     padding: 0 0 0 0 !important;
+     margin: 0 0 0 0 !important;
+ }
+
+ .talkers td {
+     border-spacing: 0px;
+     padding: 0 0 0 0 !important;
+ }
+
+ #talkersB {
+     border-spacing: 0px 0px;
+     width: 100%;
+ }
+
+ #talkersB td {
+     border-width: 0px;
+     vertical-align: top;
+     padding: 0 0 0 0 !important;
+ }
+
+ #cardSave #msgs {
+     border-spacing: 0px 0px;
+     width: 100%;
+ }
+
+ #cardSave #msgs td {
+     vertical-align: middle;
+ }
+
+ #cardSave #msgs .nick {
+     min-width: 150px;
+ }
+
+ #cardSave #msgs .content {
+     width: 100%;
+ }
+
+ #cardSave #msgs .del {
+     min-width: 30px;
+ }
+
+ #memGen {
+     width: 100%;
+ }
+
+ .memParsed {
+     width: 100%;
+     border-spacing: 13px 10px;
+ }
+
+ #charNew {
+     width: 100%;
+     padding: 5 10 10 10;
+     margin-top: 20px;
+
+     & td {
+         width: 50%;
+         height: 100%;
+     }
+ }
+
+ #charNewStep {
+     width: 100%;
+ }
+
+ #charNewStep td {
+     width: 33%;
+ }
+
+ #charNewHelp li {
+     text-align: justify;
+ }
+
+ .charNewMemSets {
+     width: 100%;
+     border-spacing: 13px 10px;
+ }
+
+ .charNewParams {
+     width: 100%;
+
+     & td {
+         vertical-align: middle !important;
+     }
+
+     & td:nth-child(1) {
+         width: 120px !important;
+         max-width: 120px !important;
+         min-width: 120px !important;
+
+         & input {
+             width: 100%;
+             min-width: 90px;
+             text-align: right;
+         }
+     }
+
+     & td:nth-child(3) {
+         width: 30px !important;
+     }
+
+     & td:nth-child(4) {
+         width: 30px !important;
+     }
+
+     & td:nth-child(2) {
+         width: 100% !important;
+
+         & input[type="range"] {
+             width: 100%;
+             min-width: 90px;
+         }
+     }
+ }
+
+ #chatLogC {
+
+     overflow: scroll;
+
+     scrollbar-color: mediumseagreen;
+ }
+
+ #chatC {
+     background-size: 100% auto;
+     background-repeat: repeat-y;
+ }
+
+
+ .nobg {
+     padding: 5 5 5 5;
+     background-color: rgba(0, 0, 0, 0.7);
+     border-radius: 25px;
+     box-shadow: 0px 0px 7px rgba(0, 0, 7, 0.7);
+ }
+
+ .nobgb {
+     padding: 0 5 5 5 !important;
+     background-color: rgba(0, 0, 0, 0.7);
+     border-radius: 0px 0px 9px 9px !important;
+     box-shadow: 0px 0px 7px rgba(0, 0, 7, 0.7);
+ }
+
+ .nobgt {
+     padding: 5 5 5 5 !important;
+     background-color: rgba(0, 0, 0, 0.7);
+     border-radius: 9px 9px 0px 0px !important;
+     box-shadow: 0px 0px 7px rgba(0, 0, 7, 0.7);
+ }
+
+ #menu .nobg {
+     padding: 1 1 1 1;
+     background-color: rgba(0, 0, 0, 0.75);
+     display: block;
+     width: 100%;
+     font-weight: bold;
+ }
+
+ #chat #nicks * {
+     font-size: 12px;
+ }
+
+ #chat #nicks input {
+     width: 95px;
+     font-size: 12px;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+ }
+
+ #chat .nicku,
+ #chat .nickai {
+     font-size: 12px;
+     font-style: italic;
+     background-color: #101910;
+     clear: both;
+     padding: 10 10 10 10;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/2px 0px 2px 0px;
+ }
+
+ .filterDark {
+     filter: brightness(75%);
+ }
+
+ .filterGray {
+     filter: saturate(0%) brightness(60%);
+ }
+
+ .rangeRandom {
+     filter: invert(100%) hue-rotate(180deg);
+ }
+
+ .gray {
+     filter: saturate(0%) brightness(60%);
+ }
+
+ .msgUserList * {
+     filter: saturate(0%);
+ }
+
+ .msgTextCont {
+     height: 100%;
+ }
+
+ .msgTextCont:hover .nicku,
+ .msgTextCont:hover .nickai {
+     border-radius: 0px;
+     border-width: 0px;
+     border-image: linear-gradient(to right, #023502, #306530, #306030, #023502) 3/2px 1px 2px 1px;
+     background: radial-gradient(85% 1110%, #054505, #002000);
+ }
+
+ .msg:hover,
+ .lastmsg:hover {
+     background-color: #002500;
+ }
+
+ .msgNicks,
+ .msgNicks * {
+     font-size: 10px;
+ }
+
+ .msgNicks {
+     margin-right: 15px;
+     vertical-align: middle;
+ }
+
+ .msgDelShow {
+     background-color: #210000 !important;
+     filter: brightness(68%);
+ }
+
+ .msgMvShow {
+     background-color: #003800 !important;
+ }
+
+ #chat .nicku {
+     float: left;
+     margin: 0 7 7 0;
+ }
+
+ #chat .nickai {
+     float: right;
+     margin: 0 0 7 7;
+ }
+
+ #chat .msgText {
+     padding: 11 4 1 4;
+     white-space: pre-wrap;
+ }
+
+
+ #chat .next,
+ #chat .prev {
+     vertical-align: middle;
+     min-width: 20px;
+     font-weight: bold;
+     text-align: center;
+     padding: 2 2 2 2;
+     height: 100%;
+ }
+
+ .next *,
+ .prev * {
+     color: #15c015;
+ }
+
+ .prevC,
+ .nextC {
+     display: flex;
+     flex-direction: column;
+     height: 100%;
+     gap: 5px;
+     background-color: #141414;
+ }
+
+ .prevC div,
+ .nextC div {
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     flex: 1;
+     border-image: linear-gradient(#103510, #141414, #103510) 2/3px;
+     padding: 7px;
+ }
+
+ .prevC div:hover,
+ .nextC div:hover {
+     background: radial-gradient(150% 200%, #052005, #141414);
+ }
+
+ .prevC div,
+ .nextC div {
+     border-radius: 7px;
+ }
+
+ #menu table {
+     border-spacing: 0px 5px;
+ }
+
+ #menu table td {
+     padding: 1px;
+     padding-top: 4px;
+     text-align: justify;
+     white-space: nowrap;
+ }
+
+ #chat .msg,
+ #chat .lastmsg {
+     height: auto;
+     border-image: linear-gradient(to right, #141414, #205520, #205520, #141414) 5/1px 0px 2px 0px;
+ }
+
+ #loadlabel {
+     display: inline-block;
+     cursor: pointer;
+ }
+
+ #loadRaglabel {
+     display: inline-block;
+     cursor: pointer;
+ }
+
+ .msgFooter {
+     margin: 7 7 7 7;
+     float: right;
+     clear: none;
+ }
+
+ .rating {
+     vertical-align: middle;
+ }
+
+ .rating * {
+     font-size: 18px;
+ }
+
+ .litp {
+     color: #15c015;
+ }
+
+ .litn {
+     color: #d51515;
+ }
+
+ #contextFilter {
+     text-align: right;
+     padding: 0 10 0 0 !important;
+     margin: 0 10 0 0 !important;
+ }
+
+ #contextFilterRow td {
+     padding: 0 10 0 0 !important;
+     margin: 0 10 0 0 !important;
+ }
+
+ #contextFilter * {
+     text-align: right;
+     font-size: 10px;
+ }
+
+ #contextFilter * input {
+     padding-right: 2px;
+     margin-right: 2px;
+     width: 10px;
+     height: 10px;
+ }
+
+ .understroke {
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+ }
+
+ #sysinstr {
+     width: 100%;
+     text-align: center;
+     margin: 10 0 0 0;
+     padding: 0 0 0 0;
+ }
+
+ #sysinstr td {
+     text-align: center;
+     border-spacing: 0px 0px;
+     margin: 0 0 0 0;
+     padding: 0 0 0 0;
+ }
+
+ #sets {
+
+     width: 800px;
+     text-align: center;
+ }
+
+ #sets .title {
+     width: 300px;
+     text-align: right;
+ }
+
+ #sets .descr {
+     max-height: 125px;
+     overflow: auto;
+ }
+
+ #sets .def {
+     width: 180px;
+     vertical-align: middle;
+ }
+
+ #sets .val {
+     width: 300px;
+     height: 100%;
+     overflow: clip;
+
+     min-width: 200px;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     padding: 5px;
+     margin: 7 10 5 10;
+     vertical-align: middle;
+ }
+
+ #sets input {
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+ }
+
+ #sets .setsQ {
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     width: 20px;
+     padding: 0px;
+     vertical-align: middle;
+ }
+
+ #setsQ div {
+     color: silver;
+ }
+
+ #setsQ input {
+     width: 30px;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     padding: 0px;
+     margin: 2 2 2 2;
+     vertical-align: middle;
+ }
+
+ #setsQ input[type='checkbox'] {
+     width: 10px;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     padding: 0px;
+     margin: 2 7 2 0;
+     vertical-align: middle;
+ }
+
+ #sets .val input {
+     border-width: 0 0 0 0;
+     text-align: center;
+ }
+
+ #optRes {
+     border-color: mediumseagreen;
+     border-radius: 5px;
+     border-spacing: 0px 15px;
+ }
+
+ #optResCur {
+     margin-left: auto;
+     margin-right: auto;
+ }
+
+ #optResCur td {
+     padding: 7 10 5 10;
+     border-width: 2px;
+     border-radius: 5px;
+     border-image: linear-gradient(#103510, #313531, #265126) 2/3px 2px 3px 2px;
+ }
+
+ .optResP {
+     margin-left: 10px;
+     margin-bottom: 5px;
+     margin-top: -7px;
+ }
+
+ #optRes .header {
+     font-size: 16px;
+     color: mediumseagreen;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+ }
+
+ #optRes td {
+     padding: 7 10 5 10;
+     word-wrap: break-word;
+     border-width: 2px;
+     border-radius: 5px;
+     border-image: linear-gradient(#103510, #313531, #265126) 2/3px 2px 3px 2px;
+ }
+
+ #optRun {
+     font-size: 16px;
+     font-weight: bold;
+ }
+
+ #optTimes input {
+     width: 30px;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+ }
+
+ #optL {
+     width: 100%;
+
+
+
+ }
+
+ #optL .param {
+     text-align: right;
+     min-width: 175px;
+     max-width: 200px;
+ }
+
+ #optL .start,
+ #optL .end,
+ #optL .step {
+     text-align: center;
+     max-width: 55px;
+     vertical-align: middle;
+ }
+
+ #optL .use {
+     text-align: center;
+     min-width: 35px;
+ }
+
+ #optL .start input,
+ #optL .end input,
+ #optL .step input {
+     text-align: center;
+     width: 55px;
+ }
+
+ #optL .round {
+     text-align: center;
+     min-width: 35px;
+     max-width: 35px;
+ }
+
+ #optL .round input {
+     text-align: center;
+     width: 35px;
+ }
+
+ .nowrap * {
+     white-space: nowrap;
+ }
+
+ .groups {
+     color: mediumseagreen;
+     font-style: italic;
+ }
+
+ .groupSel {
+     font-weight: bold;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+ }
+
+ .groupDel {
+     color: #d51515;
+ }
+
+ .groupPN {
+     font-size: 10px;
+     vertical-align: middle;
+     padding: 3px;
+ }
+
+ .nickDel {
+     cursor: pointer;
+     text-decoration: underline;
+ }
+
+ .del,
+ .red {
+     color: #d51515;
+ }
+
+ .del {
+     cursor: pointer;
+     text-decoration: underline;
+ }
+
+ .nickGroupAddList {
+     margin: 2 2 2 2;
+     padding: 4 3 2 3;
+     width: 100%;
+     font-size: 12px;
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+ }
+
+ .userTypeCh {
+     font-weight: bold;
+ }
+
+ .nickDel {
+     color: #d51515;
+ }
+
+ #nicks {
+     width: 200px;
+ }
+
+ #nicks .addTxt {
+     vertical-align: middle !important;
+     text-align: right;
+     margin-right: 0px !important;
+     padding-right: 0px !important;
+     min-width: 90px;
+     max-width: 90px;
+ }
+
+ #chat #nicks .addTxt *,
+ #chat #nicks .nicksListTitle * {
+     font-size: 10px;
+ }
+
+ #nicks .addVal {
+     vertical-align: middle;
+     min-width: 100px;
+     padding-left: 0px !important;
+ }
+
+ #nicks .addVal {
+     vertical-align: middle;
+     min-width: 100px;
+     padding-left: 0px;
+     padding-right: 0px !important;
+     margin-right: 0px !important;
+ }
+
+ #chat #nicks .addVal input {
+     vertical-align: middle;
+     width: 100px;
+ }
+
+ #nicks .addBtn {
+     vertical-align: middle !important;
+     padding-left: 0px !important;
+     margin-left: 0px !important;
+ }
+
+ .nick {
+     white-space: nowrap;
+     padding: 5 0 5 0;
+     display: inline-block;
+ }
+
+ .left {
+     text-align: left;
+ }
+
+ .right {
+     text-align: right;
+ }
+
+ .leftf {
+     float: left;
+     clear: none;
+ }
+
+ .rightf {
+     float: right;
+     clear: none;
+ }
+
+ .center {
+     text-align: center;
+     margin: 0 auto;
+ }
+
+ .justify {
+     text-align: justify;
+ }
+
+ .middle {
+     vertical-align: middle;
+ }
+
+ .nobreak {
+     white-space: nowrap;
+ }
+
+ .bold {
+     font-weight: bold;
+ }
+
+ .lnk,
+ a {
+     text-decoration: underline;
+     color: mediumseagreen;
+     cursor: pointer;
+ }
+
+ input[type="radio"] {
+     accent-color: green;
+ }
+
+ .msgText[contenteditable]:focus {
+     outline: 0px solid darkgreen;
+ }
+
+ .msgText:hover {
+
+     color: white;
+ }
+
+ .heardBy {
+     display: block;
+     clear: none;
+     float: right;
+
+     text-align: right;
+ }
+
+ .heardBy * {
+     font-size: 10px;
+ }
+
+ .heardBy input {
+     width: 10px;
+     height: 10px;
+ }
+
+ #prompt {
+     padding: 11 7 11 7;
+     margin: 0 0 0 0;
+     border-width: 1px;
+     outline: 0px;
+ }
+
+ #prompt:focus,
+ #prompt:hover,
+ #sys:hover,
+ #sys:focus,
+ #instr:hover,
+ #instr:focus,
+ #rag:hover,
+ #rag:focus {
+     background-color: #002500;
+     outline: 0px;
+ }
+
+ #sysTitle {
+     text-align: left;
+     font-size: 12px;
+     color: silver;
+ }
+
+ #instTitle {
+     float: right;
+     clear: none;
+     font-size: 12px;
+     color: silver;
+ }
+
+ #ragTitle {
+     text-align: left;
+     font-size: 12px;
+     color: silver;
+ }
+
+ #ragC {
+     width: 100%;
+ }
+
+ #remembered {
+     padding: 5 10 10 10;
+ }
+
+ #ragC table {
+     width: 100%;
+     text-align: center;
+     margin: 0 0 0 0;
+     padding: 0 0 0 0;
+ }
+
+ #ragC td {
+     width: 100%;
+     margin: 10 0 0 0;
+     padding: 0 0 0 0;
+ }
+
+ .small {
+     font-size: 12px;
+ }
+
+ #howto {
+     text-align: justify;
+     margin-top: 20px;
+ }
+
+ #help {
+     padding: 5 10 10 10;
+ }
+
+ .slide-fade-enter-active {
+     transition: all .2s ease;
+ }
+
+ .slide-fade-leave-active {
+     transition: all .2s;
+ }
+
+ .slide-fade-enter-from {
+     transform: translateY(7px);
+     opacity: 0;
+ }
+
+ .slide-fade-leave-to {
+     transform: translateY(-7px);
+     opacity: 0;
+ }
+
+ .ta-enter-active {
+     transition: opacity .35s ease;
+ }
+
+ .ta-leave-active {
+     transition: opacity .21s ease;
+ }
+
+ .ta-enter-from {
+     opacity: 0;
+     color: mediumseagreen;
+ }
+
+ .ta-leave-to {
+     opacity: 0;
+     color: mediumseagreen;
+ }
+
+ .tokens span,
+ .tokens {
+     font-size: 11px;
+ }
+
+ .tokens {
+     vertical-align: middle;
+ }
+
+ #sets .headerC {
+     padding-top: 7px;
+     padding-bottom: 9px;
+ }
+
+ #sets .txt {
+     padding: 10 14 10 10;
+     background-color: #002500;
+     border-radius: 14px;
+ }
+
+ .pre {
+     white-space: pre-wrap;
+ }
+
+ #sets .header {
+     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+ }
+
+ #sets .header * {
+     font-size: 16px;
+ }
+
+ #heading {
+     text-align: center;
+ }
+
+ #heading * {
+     font-size: 12px;
+ }
+
+ .header {
+     font-size: 16px;
+     color: mediumseagreen;
+ }
+
+ .nickSel * {
+     font-size: 12px;
+ }
+
+ .nickSel input {
+     width: 10px;
+     height: 10px;
+ }
+
+ .models {
+     font-size: 12px;
+ }
+
+ .green {
+     color: mediumseagreen;
+ }
+
+ #chat .empty {
+     font-size: 10px;
+     font-style: italyc;
+     vertical-align: middle;
+ }
+
+ #chat .error {
+     font-size: 12px;
+     font-style: italyc;
+     vertical-align: middle;
+     color: #d51515;
+
+ }
