@@ -27,7 +27,16 @@ window.app = createApp({
 						},
 					],
 					models: [],
-					modelsEmb: [],
+					modelsEmb: [{
+						tag: 'nomic-embed-text:latest',
+						n: 'nomic-embed-text:latest (hardcoded)',
+						mt: null,
+						s: null,
+						ps: null,
+						q: null,
+						ctx: null,
+						emb: true
+					}],
 					modelsLoading: { done: 0, total: 0, inited: 0 },
 					pState: {
 						sys: 1,
@@ -2103,7 +2112,16 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 
 							t.updateAddParams(d, 'configGlobal');
 							t.updateAddParams(d, 'pState');
-							d.modelsEmb = [];
+							d.modelsEmb = [{
+								tag: 'nomic-embed-text:latest',
+								n: 'nomic-embed-text:latest (hardcoded)',
+								mt: null,
+								s: null,
+								ps: null,
+								q: null,
+								ctx: null,
+								emb: true
+							}]; // Hardcoded embedding model
 							t.copy(t.def.settingsGlobal.req, d.settingsGlobal.req, 'modelEmb');
 							d.rag = {};
 							for (let u in d.nicks) {
@@ -2419,11 +2437,12 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						this.w(`parsing list reply`);
 						try { res = JSON.parse(r) } catch (error) { console.error(`error: ${error}`) }
 						let old = {
-							model: [...this.models],
-							modelEmb: [...this.modelsEmb]
+							model: [...this.models]
+							// modelsEmb removed since it's hardcoded
 						};
 						this.w({ oldModels: old });
-						this.models = []; this.modelsEmb = [];
+						this.models = [];
+						// modelsEmb is now hardcoded, no need to clear it
 						this.w({ modelsDL: res });
 						let mdls = [];
 						this.modelsLoading.inited = 2;
@@ -2473,11 +2492,8 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 
 						this.w('processed new models');
 						for (const m of mdls) {
-							if (m.emb) {
-								this.modelsEmb.push(m);
-							} else {
-								this.models.push(m);
-							}
+							// All models go to regular models array, modelsEmb is hardcoded
+							this.models.push(m);
 						}
 
 						if (!this.models.length) {
@@ -2494,7 +2510,7 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						//this section had too many copy-pastes, one day it needs to be redone )).
 						//but we can just wait 1-2 years till llm can do that, right? )
 						//thank you, llm of the future! ))
-						var horror = { model: 'models', modelEmb: 'modelsEmb' };
+						var horror = { model: 'models' }; // Removed modelEmb since it's hardcoded
 						for (const i in horror) {
 							if (!this.settingsGlobal.req[i].v.l.length) {
 								this.settingsGlobal.req[i].v.v = '';
@@ -2794,16 +2810,12 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 				},
 				async ragU(u) {
 					if (u == null) return;
-					if (!this.settings.req.modelEmb.v.l.length) {
-						alert("Can not update memories (rag) as you've not downloaded any models for embeddings. Please pull at least one embedding model, like 'nomic-embed-text' or anything else with 'embed' in its name. Also, don't forget to run a second instance of Ollama on a different port and to configure 'Embeddings URL' in settings by pointing it to that URL. This way your prompts will not slow down when you use 'memories'. I will switch off your rag setting for now, to prevent showing you this message next time. Enjoy.");
-						this.ragDisable(1);
-						return;
-					}
+					// Since embedding model is hardcoded, no need to check if models are available
 					this.workingRag = true;
 					this.w(`updating rag for user ${u}`);
 
 					let r = this.rag[u], p = []; const old = r.v;
-					r.modelEmb = this.settings.req.modelEmb.v.l[this.settings.req.modelEmb.v.v].tag;
+					r.modelEmb = 'nomic-embed-text:latest'; // Hardcoded embedding model
 					r.v = [];
 					txt: for (let l of this.rag[u].t.split('\n')) {
 						l = l.trim(); if (!l.length) continue;
@@ -2850,16 +2862,16 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						return [];
 					}
 
-					if (txt == null || !txt.length || !this.settings.req.modelEmb.v.l.length) return;
+					if (txt == null || !txt.length) return;
 					let opt = {};
-					opt['model'] = this.settings.req.modelEmb.v.l[this.settings.req.modelEmb.v.v].tag;
+					opt['model'] = 'nomic-embed-text:latest'; // Hardcoded embedding model
 					opt['prompt'] = txt.trim();
 					this.w({ opt: opt });
 					const t = this;
 
 					let r, d;
 					try {
-						r = await fetch(t.config.urlEmb.v + "/api/embeddings", {
+						r = await fetch("http://127.0.0.1:11434" + "/api/embeddings", { // Hardcoded embedding URL
 							"method": "POST",
 							"body": JSON.stringify(opt)
 						});
@@ -4325,12 +4337,9 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					this.rag['g'].last = [];
 					if (h.rag) {
 						this.w("rag is enabled");
-						if (!this.settings.req.modelEmb.v.l.length) {
-							alert("You have enabled memories (rag) feature but you've not downloaded any models for embeddings. Please pull at least one embedding model, like 'nomic-embed-text' or anything else with 'embed' in its name. Also, don't forget to run a second instance of Ollama on a different port and to configure 'Embeddings URL' in settings by pointing it to that URL. This way your prompts will not slow down when you use 'memories'. I will switch off your rag setting for now, to prevent showing you this message next time. Enjoy.");
-							this.ragDisable(1);
-						} else {
-							this.w(`searching in rag`);
-							let ragp = 1;
+						// Since embedding model is hardcoded, skip the model availability check
+						this.w(`searching in rag`);
+						let ragp = 1;
 							if (!/^(\d{1,14})$/.test(this.config.ragPast.v)) {
 								this.config.ragPast.v = this.config.ragPast.def;
 								alert(`You have a bad configured value for the ${this.config.ragPast.name} parameter, resetted it to: ${this.config.ragPast.v}`);
@@ -4359,7 +4368,7 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 									alert("You have enabled memories (rag) feature but the embedding url returns an error. Please fix the issue and re-enabled rag. For now the rag is going to be disabled.");
 									this.ragDisable(0);
 								} else {
-									const memb = this.settings.req.modelEmb.v.l[this.settings.req.modelEmb.v.v].tag;
+									const memb = 'nomic-embed-text:latest'; // Hardcoded embedding model
 									let rv = { g: [] }; rv[h.aId] = [];
 									let ra = {};
 									let min = '';
