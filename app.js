@@ -2871,7 +2871,7 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 
 					let r, d;
 					try {
-						r = await fetch("http://127.0.0.1:11434" + "/api/embeddings", { // Hardcoded embedding URL
+						r = await fetch(this.config.urlEmb.v + "/api/embeddings", { // Use configured embedding URL
 							"method": "POST",
 							"body": JSON.stringify(opt)
 						});
@@ -4365,8 +4365,10 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 							let e = await this.embed(`please find top related content to: """${rags.join("\n")}"""`); //
 							this.msgStatusSetDo(h.msg, 'embedding prompt');
 							if (!e.length) {
-								alert("You have enabled memories (rag) feature but the embedding url returns an error. Please fix the issue and re-enabled rag. For now the rag is going to be disabled.");
-								this.ragDisable(0);
+								const errorMsg = this.rag.err ? `Embedding error: ${this.rag.err}` : "Embedding returned empty result";
+								this.w(`RAG skip for this message: ${errorMsg}`);
+								alert(`Memories (RAG) feature skipped for this message due to embedding error: ${errorMsg}. Check your embedding URL (${this.config.urlEmb.v}) and ensure the embedding model 'nomic-embed-text:latest' is available.`);
+								// Don't disable RAG permanently, just skip it for this message
 							} else {
 								const memb = 'nomic-embed-text:latest'; // Hardcoded embedding model
 								let rv = { g: [] }; rv[h.aId] = [];
