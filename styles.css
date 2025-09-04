@@ -10,12 +10,12 @@
  }
 
  ::selection {
-     color: #10ee10;
-     background: #103510;
+     color: #808080;
+     background: #808080;
  }
 
  body {
-     background-color: #141414;
+     background-color: #808080;
      color: #e0e0e0;
      background-size: 100% auto;
      background-repeat: repeat-y;
@@ -31,7 +31,7 @@
      box-sizing: border-box;
      border-color: silver;
      border-radius: 5px;
-     border-image: linear-gradient(#103510, #141414, #103510) 2/3px 2px 3px 2px;
+     border-image: linear-gradient(#808080, #808080, #808080) 2/3px 2px 3px 2px;
      box-shadow: 0px 0px 7px rgba(0, 0, 7, 0.7);
      padding: 10 10 10 10;
  }
@@ -45,8 +45,8 @@
  input {
      font-size: 16px;
      background-color: rgba(0, 0, 0, 0.45);
-     color: #15ea15;
-     accent-color: darkgreen;
+     color: #808080;
+     accent-color: #808080;
      outline-color: transparent;
      box-sizing: border-box;
      border-color: transparent;
@@ -61,7 +61,7 @@
  }
 
  input[type=checkbox] {
-     accent-color: darkgreen;
+     accent-color: #808080;
      padding: 3 3 3 3;
  }
 
@@ -71,14 +71,14 @@
 
  select {
      font-size: 16px;
-     color: mediumseagreen;
+     color: #808080;
      background-color: rgba(0, 0, 0, 0.45);
 
      box-sizing: border-box;
      border-color: #e0e0e0;
 
      padding: 5 2 2 2;
-     border-image: linear-gradient(#103510, #141414, #103510) 2/3px 2px 3px 2px;
+     border-image: linear-gradient(#808080, #808080, #808080) 2/3px 2px 3px 2px;
  }
 
  #app {
@@ -126,7 +126,7 @@
      margin: auto;
      height: 100%;
      border-spacing: 13px 10px;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/2px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/2px 0px 2px 0px;
  }
 
  #chat td {
@@ -265,7 +265,7 @@
 
      overflow: scroll;
 
-     scrollbar-color: mediumseagreen;
+     scrollbar-color: #808080;
  }
 
  #chatC {
@@ -310,7 +310,7 @@
  #chat #nicks input {
      width: 95px;
      font-size: 12px;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
  }
 
  #chat .nicku,
@@ -320,7 +320,7 @@
      background-color: #101910;
      clear: both;
      padding: 10 10 10 10;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/2px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/2px 0px 2px 0px;
  }
 
  .filterDark {
@@ -351,13 +351,13 @@
  .msgTextCont:hover .nickai {
      border-radius: 0px;
      border-width: 0px;
-     border-image: linear-gradient(to right, #023502, #306530, #306030, #023502) 3/2px 1px 2px 1px;
-     background: radial-gradient(85% 1110%, #054505, #002000);
+     border-image: linear-gradient(to right, #023502, #808080, #808080, #023502) 3/2px 1px 2px 1px;
+     background: rgba(0, 0, 0, 0.75);
  }
 
  .msg:hover,
  .lastmsg:hover {
-     background-color: #002500;
+     background-color: rgba(0, 0, 0, 0.75);
  }
 
  .msgNicks,
@@ -376,7 +376,7 @@
  }
 
  .msgMvShow {
-     background-color: #003800 !important;
+     background-color: #808080 !important;
  }
 
  #chat .nicku {
@@ -407,7 +407,7 @@
 
  .next *,
  .prev * {
-     color: #15c015;
+     color: #808080;
  }
 
  .prevC,
@@ -416,7 +416,7 @@
      flex-direction: column;
      height: 100%;
      gap: 5px;
-     background-color: #141414;
+     background-color: #808080;
  }
 
  .prevC div,
@@ -425,13 +425,13 @@
      justify-content: center;
      align-items: center;
      flex: 1;
-     border-image: linear-gradient(#103510, #141414, #103510) 2/3px;
+     border-image: linear-gradient(#808080, #808080, #808080) 2/3px;
      padding: 7px;
  }
 
  .prevC div:hover,
  .nextC div:hover {
-     background: radial-gradient(150% 200%, #052005, #141414);
+     background: rgba(0, 0, 0, 0.75);
  }
 
  .prevC div,
@@ -453,7 +453,7 @@
  #chat .msg,
  #chat .lastmsg {
      height: auto;
-     border-image: linear-gradient(to right, #141414, #205520, #205520, #141414) 5/1px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #205520, #205520, #808080) 5/1px 0px 2px 0px;
  }
 
  #loadlabel {
@@ -481,11 +481,11 @@
  }
 
  .litp {
-     color: #15c015;
+     color: #808080;
  }
 
  .litn {
-     color: #d51515;
+     color: #808080;
  }
 
  #contextFilter {
@@ -512,7 +512,7 @@
  }
 
  .understroke {
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
  }
 
  #sysinstr {
@@ -556,18 +556,18 @@
      overflow: clip;
 
      min-width: 200px;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
      padding: 5px;
      margin: 7 10 5 10;
      vertical-align: middle;
  }
 
  #sets input {
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
  }
 
  #sets .setsQ {
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
      width: 20px;
      padding: 0px;
      vertical-align: middle;
@@ -579,7 +579,7 @@
 
  #setsQ input {
      width: 30px;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
      padding: 0px;
      margin: 2 2 2 2;
      vertical-align: middle;
@@ -587,7 +587,7 @@
 
  #setsQ input[type='checkbox'] {
      width: 10px;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
      padding: 0px;
      margin: 2 7 2 0;
      vertical-align: middle;
@@ -599,7 +599,7 @@
  }
 
  #optRes {
-     border-color: mediumseagreen;
+     border-color: #808080;
      border-radius: 5px;
      border-spacing: 0px 15px;
  }
@@ -613,7 +613,7 @@
      padding: 7 10 5 10;
      border-width: 2px;
      border-radius: 5px;
-     border-image: linear-gradient(#103510, #313531, #265126) 2/3px 2px 3px 2px;
+     border-image: linear-gradient(#808080, #808080, #808080) 2/3px 2px 3px 2px;
  }
 
  .optResP {
@@ -624,8 +624,8 @@
 
  #optRes .header {
      font-size: 16px;
-     color: mediumseagreen;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     color: #808080;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
  }
 
  #optRes td {
@@ -633,7 +633,7 @@
      word-wrap: break-word;
      border-width: 2px;
      border-radius: 5px;
-     border-image: linear-gradient(#103510, #313531, #265126) 2/3px 2px 3px 2px;
+     border-image: linear-gradient(#808080, #808080, #808080) 2/3px 2px 3px 2px;
  }
 
  #optRun {
@@ -643,7 +643,7 @@
 
  #optTimes input {
      width: 30px;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
  }
 
  #optL {
@@ -695,17 +695,17 @@
  }
 
  .groups {
-     color: mediumseagreen;
+     color: #808080;
      font-style: italic;
  }
 
  .groupSel {
      font-weight: bold;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
  }
 
  .groupDel {
-     color: #d51515;
+     color: #808080;
  }
 
  .groupPN {
@@ -721,7 +721,7 @@
 
  .del,
  .red {
-     color: #d51515;
+     color: #808080;
  }
 
  .del {
@@ -734,7 +734,7 @@
      padding: 4 3 2 3;
      width: 100%;
      font-size: 12px;
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
  }
 
  .userTypeCh {
@@ -742,7 +742,7 @@
  }
 
  .nickDel {
-     color: #d51515;
+     color: #808080;
  }
 
  #nicks {
@@ -836,16 +836,16 @@
  .lnk,
  a {
      text-decoration: underline;
-     color: mediumseagreen;
+     color: #808080;
      cursor: pointer;
  }
 
  input[type="radio"] {
-     accent-color: green;
+     accent-color: #808080;
  }
 
  .msgText[contenteditable]:focus {
-     outline: 0px solid darkgreen;
+     outline: 0px solid #808080;
  }
 
  .msgText:hover {
@@ -885,7 +885,7 @@
  #instr:focus,
  #rag:hover,
  #rag:focus {
-     background-color: #002500;
+     background-color: rgba(0, 0, 0, 0.75);
      outline: 0px;
  }
 
@@ -970,12 +970,12 @@
 
  .ta-enter-from {
      opacity: 0;
-     color: mediumseagreen;
+     color: #808080;
  }
 
  .ta-leave-to {
      opacity: 0;
-     color: mediumseagreen;
+     color: #808080;
  }
 
  .tokens span,
@@ -994,7 +994,7 @@
 
  #sets .txt {
      padding: 10 14 10 10;
-     background-color: #002500;
+     background-color: #808080;
      border-radius: 14px;
  }
 
@@ -1003,7 +1003,7 @@
  }
 
  #sets .header {
-     border-image: linear-gradient(to right, #141414, #306530, #306030, #143514) 3/0px 0px 2px 0px;
+     border-image: linear-gradient(to right, #808080, #808080, #808080, #808080) 3/0px 0px 2px 0px;
  }
 
  #sets .header * {
@@ -1020,7 +1020,7 @@
 
  .header {
      font-size: 16px;
-     color: mediumseagreen;
+     color: #808080;
  }
 
  .nickSel * {
@@ -1037,12 +1037,12 @@
  }
 
  .green {
-     color: mediumseagreen;
+     color: #808080;
  }
 
  #chat .empty {
      font-size: 10px;
-     font-style: italyc;
+     font-style: italic;
      vertical-align: middle;
  }
 
@@ -1050,6 +1050,6 @@
      font-size: 12px;
      font-style: italyc;
      vertical-align: middle;
-     color: #d51515;
+     color: #808080;
 
  }

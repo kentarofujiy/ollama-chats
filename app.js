@@ -27,16 +27,6 @@ window.app = createApp({
 						},
 					],
 					models: [],
-					modelsEmb: [{
-						tag: 'nomic-embed-text:latest',
-						n: 'nomic-embed-text:latest (hardcoded)',
-						mt: null,
-						s: null,
-						ps: null,
-						q: null,
-						ctx: null,
-						emb: true
-					}],
 					modelsLoading: { done: 0, total: 0, inited: 0 },
 					pState: {
 						sys: 1,
@@ -184,7 +174,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						chatHeight: { g: 'design', name: 'Height of the chat log', v: '', d: "If you prefer a fixed chat log height with a scroller inside, set this to the desired height of your chat log. The valus is in pixels, use only a number, like '300'.", def: '', f: '', q: 'logHeigh', opt: false },
 
 						url: { g: 'url', name: 'URL', v: "http://127.0.0.1:11434", def: 'http://127.0.0.1:11434', d: 'URL of the Ollama service or OpenRouter API (https://openrouter.ai/api/v1)', q: null, opt: false, sess: true },
-						urlEmb: { g: 'url', name: 'Embeddings instance URL', v: "http://127.0.0.1:11434", def: 'http://127.0.0.1:11434', d: "URL of the Ollama service to use for embeddings calculations. It can be the same but in that case every such request clears cache and causes prompt re-evaluation, so caching doesn't work with rag. I recommend running a second instance of Ollama on another port to handle embeddings.", q: null, opt: false, sess: true },
 						apiKey: { g: 'url', name: 'API Key', v: "", def: '', d: 'API Key for OpenRouter (required when using OpenRouter API). Leave empty for local Ollama.', q: null, opt: false, sess: true },
 
 						instrWithSideRating: { g: 'rating', name: 'Stil use "instr" for side-replies when side-rating is on ', v: true, d: "Shoud your instruction (instr) be used when you request side-message with rated examples (ctrl+right). Instruction may interefere with the examples as AI gets confused with what you want from it, there are bad examples, good examples and also an instruction for new reply, not mentioning the context. You may switch this off. It has effect only when you request for rated side-replies, otherwise this setting is not used.", def: true, f: 'cb', q: false, qn: 's-rate', opt: false },
@@ -214,7 +203,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						req: {
 							model: { g: 'ollama', v: { l: computed(() => this.models), v: '' }, t: 'sel', def: 0, d: 'Model that will generate the reply', f: 'sel', q: true, qn: 'mdl', opt: false, sess: 'v' },
 							keep_alive: { g: 'ollama', v: 900, t: 'n', def: "300", d: 'Time to keep model cached in memory, a number in seconds, any negative number will keep the model loaded in memory, 0 will unload the model immediately after generating a response.', q: false, qn: 'k-alv', opt: false },
-							modelEmb: { g: 'ollama', v: { l: computed(() => this.modelsEmb), v: '' }, t: 'sel', def: 0, d: 'Model that will generate the embeddings for rag search', f: 'sel', q: false, qn: 'mdl-emb', opt: false, sess: 'v' },
 						}
 					},
 					stream: true,
@@ -405,8 +393,7 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					} this.def = def;
 
 					this.sessLoad();
-					this.urlTest().then(async res => {
-						await this.initializeRAGSettings();
+					this.urlTest().then(res => {
 						this.inited = 1;
 					});
 
@@ -548,10 +535,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 				},
 				'config.bgFixed.v'(v) {
 					this.bgFix(v);
-				},
-				'config.urlEmb.v'(v) {
-					this.w('updating rag status as emb url changed');
-					this.embed('test');
 				},
 				'charNew.parts.mem.custom': {
 					handler(v) {
@@ -785,7 +768,7 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					}
 
 					sess['root'] = {};
-					for (let s of ['models', 'modelsEmb']) {
+					for (let s of ['models']) {
 						(sess.root[s] = this[s]);
 					}
 
@@ -2113,24 +2096,11 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 
 							t.updateAddParams(d, 'configGlobal');
 							t.updateAddParams(d, 'pState');
-							d.modelsEmb = [{
-								tag: 'nomic-embed-text:latest',
-								n: 'nomic-embed-text:latest (hardcoded)',
-								mt: null,
-								s: null,
-								ps: null,
-								q: null,
-								ctx: null,
-								emb: true
-							}]; // Hardcoded embedding model
-							t.copy(t.def.settingsGlobal.req, d.settingsGlobal.req, 'modelEmb');
 							d.rag = {};
 							for (let u in d.nicks) {
 								d.rag[u] = t.ragStrct();
 								u = d.nicks[u];
 								if (!u.hasOwnProperty('settings')) continue;
-								t.copy(t.def.settingsGlobal.req, u.settings.req, 'modelEmb');
-								t.copy(t.def.configGlobal, u.config, 'urlEmb');
 								delete u.config.urlProxy;
 							}
 							delete d.configGlobal.urlProxy;
@@ -2253,11 +2223,9 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 							d.configGlobal.version.v = '1.9.8b';
 
 							d.settingsGlobal.req.model.sess = 'v';
-							d.settingsGlobal.req.modelEmb.sess = 'v';
 							for (let u in d.nicks) {
 								if (!u.hasOwnProperty('settings')) continue;
 								u.settings.req.model.sess = 'v';
-								u.settings.req.modelEmb.sess = 'v';
 							}
 							t.w(`upgraded to version ${d.configGlobal.version.v}`);
 							parse(d);
@@ -2335,12 +2303,10 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						t.w('restore data links to computed vals');
 						t.nicks[-1].n = computed(() => t.config.sysNick.v);
 						t.settingsGlobal.req.model.v.l = computed(() => t.models);
-						t.settingsGlobal.req.modelEmb.v.l = computed(() => t.modelsEmb);
 						for (let u in t.nicks) {
 							u = t.nicks[u];
 							if (!u.hasOwnProperty('settings')) continue;
 							u.settings.req.model.v.l = computed(() => t.models);
-							u.settings.req.modelEmb.v.l = computed(() => t.modelsEmb);
 						}
 						t.w(`finished upgrading to version: ${t.configGlobal.version.v}`);
 
@@ -2439,11 +2405,9 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						try { res = JSON.parse(r) } catch (error) { console.error(`error: ${error}`) }
 						let old = {
 							model: [...this.models]
-							// modelsEmb removed since it's hardcoded
 						};
 						this.w({ oldModels: old });
 						this.models = [];
-						// modelsEmb is now hardcoded, no need to clear it
 						this.w({ modelsDL: res });
 						let mdls = [];
 						this.modelsLoading.inited = 2;
@@ -2463,7 +2427,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 									ps: null,
 									q: null,
 									ctx: m.context_length || null,
-									emb: false // OpenRouter doesn't have embedding models in this context
 								});
 								this.w(`processed model ${m.id}`);
 								this.modelsLoading.done++;
@@ -2493,7 +2456,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 
 						this.w('processed new models');
 						for (const m of mdls) {
-							// All models go to regular models array, modelsEmb is hardcoded
 							this.models.push(m);
 						}
 
@@ -2511,65 +2473,65 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						//this section had too many copy-pastes, one day it needs to be redone )).
 						//but we can just wait 1-2 years till llm can do that, right? )
 						//thank you, llm of the future! ))
-						var horror = { model: 'models' }; // Removed modelEmb since it's hardcoded
-						for (const i in horror) {
-							if (!this.settingsGlobal.req[i].v.l.length) {
-								this.settingsGlobal.req[i].v.v = '';
-								continue;
-							}
-							let m = this.settingsGlobal.req[i].v.v;
+						
+						// Handle model selection restoration
+						if (!this.settingsGlobal.req.model.v.l.length) {
+							this.settingsGlobal.req.model.v.v = '';
+						} else {
+							let m = this.settingsGlobal.req.model.v.v;
 							let found = -1;
 
-							if (!old[i].length) {
-								this.w(`no old model list found for ${i}`);
-							} else if (m > (old[i].length - 1)) {
-								this.w(`selected ${m} value ${m} for strange reason is larger than old array: ${old[i].length - 1}`);
+							if (!old.model.length) {
+								this.w(`no old model list found for model`);
+							} else if (m > (old.model.length - 1)) {
+								this.w(`selected model value ${m} for strange reason is larger than old array: ${old.model.length - 1}`);
 							} else if (m != null && m !== '') {
-								this.w(`searching for previously selected models in new list ${i} ${m} ${old[i].length}`);
+								this.w(`searching for previously selected models in new list model ${m} ${old.model.length}`);
 								this.w({ old: old });
 
-								for (let M = 0; M < this.$data[horror[i]].length; M++) { //>
-									if (old[i][m].n === this.$data[horror[i]][M].n) {
+								for (let M = 0; M < this.models.length; M++) {
+									if (old.model[m].n === this.models[M].n) {
 										found = M;
-										this.w(`found matching model #${M} ${this.$data[horror[i]][M].n}`)
+										this.w(`found matching model #${M} ${this.models[M].n}`)
 										break;
 									}
 								}
 							} else {
-								this.w(`no model selected globaly, skipping and setting the first one`);
+								this.w(`no model selected globally, skipping and setting the first one`);
 							}
 
-							if (found == -1) found = 0; this.settingsGlobal.req[i].v.v = found;
-							this.w(`globally set model ${this.$data[horror[i]][this.settingsGlobal.req[i].v.v].n}`);
+							if (found == -1) found = 0; 
+							this.settingsGlobal.req.model.v.v = found;
+							this.w(`globally set model ${this.models[this.settingsGlobal.req.model.v.v].n}`);
 						}
 
-						for (const i in horror) {
-							this.w(`setting ${i}`);
-							for (let u in this.nicks) {
-								u = this.nicks[u];
-								if (!u.hasOwnProperty('settings')) continue;
-								if (!u.settings.req[i].v.l.length) {
-									u.settings.req[i].v.v = '';
-									continue;
-								}
-								let found = -1;
-								let us = u.settings.req[i].v;
-								if (!old[i].length) {
-									this.w(`no old model list found for ${i}`);
-								} else if (us.v > (old[i].length - 1)) {
-									this.w(`selected ${i} value ${us.v} for strange reason is larger than old array: ${old[i].length - 1}`);
-								} else if (us.v != null && us.v !== '') {
-									for (let m = 0; m < this.$data[horror[i]].length; m++) { //>
-										if (old[i][us.v].n === this.$data[horror[i]][m].n) {
-											found = m;
-											this.w(`found matching model #${m} for user ${u.n}`);
-											break;
-										}
+						// Handle per-user model selections
+						this.w(`setting model`);
+						for (let u in this.nicks) {
+							u = this.nicks[u];
+							if (!u.hasOwnProperty('settings')) continue;
+							if (!u.settings.req.model.v.l.length) {
+								u.settings.req.model.v.v = '';
+								continue;
+							}
+							let found = -1;
+							let us = u.settings.req.model.v;
+							if (!old.model.length) {
+								this.w(`no old model list found for model`);
+							} else if (us.v > (old.model.length - 1)) {
+								this.w(`selected model value ${us.v} for strange reason is larger than old array: ${old.model.length - 1}`);
+							} else if (us.v != null && us.v !== '') {
+								for (let m = 0; m < this.models.length; m++) {
+									if (old.model[us.v].n === this.models[m].n) {
+										found = m;
+										this.w(`found matching model #${m} for user ${u.n}`);
+										break;
 									}
 								}
-								if (found == -1) found = 0; us.v = found;
-								this.w(`user ${u.n} set model ${this.$data[horror[i]][us.v].n}`);
 							}
+							if (found == -1) found = 0; 
+							us.v = found;
+							this.w(`user ${u.n} set model ${this.models[us.v].n}`);
 						}
 
 						this.w({ 'models': this.models.length });
@@ -2611,9 +2573,8 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 							}
 						}
 						if (res.details.hasOwnProperty('family')) {
-							let tmp = res.details.family.match(/\bbert\b/i);
-							mdls[id].emb = tmp == null ? false : true;
-							this.w(`${mdls[id].n} embedded status: ${mdls[id].emb}`);
+							// Note: We no longer filter models based on embedding capability
+							// All models go to the main models list
 						}
 					}).catch((error) => {
 						this.connectionErr = error.message;
@@ -2809,72 +2770,13 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 						err: null
 					};
 				},
-				async checkEmbeddingModelAvailability() {
-					// For OpenRouter, embeddings are not supported
-					if (this.isOpenRouter()) {
-						this.w('OpenRouter detected, embeddings not supported');
-						return false;
-					}
-					
-					try {
-						// Try a simple embedding request to check if the model is available
-						const testResponse = await fetch(this.config.urlEmb.v + "/api/embeddings", {
-							"method": "POST",
-							"body": JSON.stringify({
-								model: 'nomic-embed-text:latest',
-								prompt: 'test'
-							})
-						});
-						
-						if (!testResponse.ok) {
-							this.w(`Embedding model availability check failed: ${testResponse.status} ${testResponse.statusText}`);
-							return false;
-						}
-						
-						this.w('Embedding model is available');
-						return true;
-					} catch (error) {
-						this.w(`Embedding model availability check error: ${error.message}`);
-						return false;
-					}
-				},
-				async initializeRAGSettings() {
-					// Clear any cached error states and validate RAG settings on startup
-					this.w('Initializing RAG settings');
-					
-					// Clear any previous RAG errors
-					if (this.rag) {
-						this.rag.err = null;
-					}
-					
-					// If RAG is enabled, check embedding model availability
-					if (this.config.rag.v) {
-						const isAvailable = await this.checkEmbeddingModelAvailability();
-						if (!isAvailable) {
-							this.w('RAG is enabled but embedding model is not available. Users will be notified when they try to use RAG features.');
-							// Don't disable RAG here - let users try and get informed errors per operation
-						} else {
-							this.w('RAG is enabled and embedding model is available');
-						}
-					} else {
-						this.w('RAG is disabled in settings');
-					}
-				},
 				async ragU(u) {
-					if (u == null) return;
-					
-					// Check if embedding model is available before proceeding
-					const isAvailable = await this.checkEmbeddingModelAvailability();
-					if (!isAvailable) {
-						this.w('Embedding model not available, skipping RAG update');
-						return;
-					}
-					
+					   if (u == null) return;
 					this.workingRag = true;
 					this.w(`updating rag for user ${u}`);
 
 					let r = this.rag[u], p = []; const old = r.v;
-					r.modelEmb = 'nomic-embed-text:latest'; // Hardcoded embedding model
+					r.modelEmb = 'nomic-embed-text:latest';
 					r.v = [];
 					txt: for (let l of this.rag[u].t.split('\n')) {
 						l = l.trim(); if (!l.length) continue;
@@ -2914,37 +2816,33 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 
 					return s;
 				},
-				async embed(txt) {
-					if (this.isOpenRouter()) {
-						this.w('Embeddings not supported for OpenRouter API');
-						this.rag.err = 'Embeddings not supported for OpenRouter API';
-						return [];
-					}
+				   async embed(txt) {
+					   // Always use Ollama with nomic-embed-text:latest for embeddings
+					  if (txt == null || !txt.length) return;
+					  
+					  let opt = {};
+					  opt['model'] = 'nomic-embed-text:latest';
+					  opt['prompt'] = txt.trim();
+					  this.w({ opt: opt });
+					  const t = this;
 
-					if (txt == null || !txt.length) return;
-					let opt = {};
-					opt['model'] = 'nomic-embed-text:latest'; // Hardcoded embedding model
-					opt['prompt'] = txt.trim();
-					this.w({ opt: opt });
-					const t = this;
-
-					let r, d;
-					try {
-						r = await fetch(this.config.urlEmb.v + "/api/embeddings", { // Use configured embedding URL
-							"method": "POST",
-							"body": JSON.stringify(opt)
-						});
-						if (!r.ok) throw new Error(r.statusText);
-					} catch (err) {
-						t.w(`Error: ${err}`);
-						t.rag.err = `${err}`;
-						return [];
-					}
-					t.rag.err = null;
-					d = await r.json();
-					t.w(`embed received ${d.embedding}`);
-					return [d.embedding, txt];
-				},
+					   let r, d;
+					   try {
+						   r = await fetch("http://127.0.0.1:11434" + "/api/embeddings", {
+							   "method": "POST",
+							   "body": JSON.stringify(opt)
+						   });
+						   if (!r.ok) throw new Error(r.statusText);
+					   } catch (err) {
+						   t.w(`Error: ${err}`);
+						   t.rag.err = `${err}`;
+						   return [];
+					   }
+					   t.rag.err = null;
+					   d = await r.json();
+					   t.w(`embed received ${d.embedding}`);
+					   return [d.embedding, txt];
+				   },
 
 				//group methods
 				//user methods
@@ -3402,7 +3300,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 							u.settings = u.settingsGlobal; delete u.settingsGlobal;
 							u.config = u.configGlobal; delete u.configGlobal;
 							u.settings.req.model.v.l = computed(() => this.models);
-							u.settings.req.modelEmb.v.l = computed(() => this.modelsEmb);
 						}
 					}
 					u.sets = u.setsDo;
@@ -4396,13 +4293,8 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					this.rag['g'].last = [];
 					if (h.rag) {
 						this.w("rag is enabled");
-						
-						// Check if embedding model is available before proceeding with RAG
-						const isEmbeddingAvailable = await this.checkEmbeddingModelAvailability();
-						if (!isEmbeddingAvailable) {
-							this.w('Embedding model not available, skipping RAG for this message');
-							alert(`Memories (RAG) feature is enabled but the embedding model 'nomic-embed-text:latest' is not available on your embedding server (${this.config.urlEmb.v}). Please ensure the model is pulled/downloaded and the embedding URL is correctly configured. RAG will be skipped for this message.`);
-						} else {
+						   // Always attempt RAG, regardless of embedding model list
+						   {
 							this.w(`searching in rag`);
 							let ragp = 1;
 							if (!/^(\d{1,14})$/.test(this.config.ragPast.v)) {
@@ -4429,13 +4321,11 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 								this.msgStatusSetDo(h.msg, 'embedding prompt');
 								let e = await this.embed(`please find top related content to: """${rags.join("\n")}"""`); //
 								this.msgStatusSetDo(h.msg, 'embedding prompt');
-								if (!e.length) {
-									const errorMsg = this.rag.err ? `Embedding error: ${this.rag.err}` : "Embedding returned empty result";
-									this.w(`RAG skip for this message: ${errorMsg}`);
-									alert(`Memories (RAG) feature skipped for this message due to embedding error: ${errorMsg}. Check your embedding URL (${this.config.urlEmb.v}) and ensure the embedding model 'nomic-embed-text:latest' is available.`);
-									// Don't disable RAG permanently, just skip it for this message
-								} else {
-									const memb = 'nomic-embed-text:latest'; // Hardcoded embedding model
+								   if (!e.length) {
+									   alert("You have enabled memories (rag) feature but the embedding url returns an error. Please fix the issue and try again. RAG will be skipped for this message.");
+									   // Do not disable RAG, just show the alert and skip RAG for this message
+								   } else {
+									const memb = 'nomic-embed-text:latest';
 									let rv = { g: [] }; rv[h.aId] = [];
 									let ra = {};
 									let min = '';
@@ -4452,11 +4342,7 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 									this.msgStatusSetDo(h.msg, 'embedding search');
 
 									for (const r of ['g', h.aId]) {
-										if (memb != this.rag[r].modelEmb) {
-											this.w(`embedding model has changed from ${this.rag[r].modelEmb} -> ${memb}, let's re-evaluate rag`);
-											this.rag[r].v = [];
-											await this.ragU(r);
-										}
+										// No need to check model changes since we always use the same embedding model
 										for (let i = 0; i < this.rag[r].v.length; i++) { //>
 											const R = this.rag[r].v[i];
 											const cos = this.cosine(R[0], e[0]);
@@ -4491,7 +4377,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 									}
 								}
 							}
-						}
 						}
 						this.msgStatusSetDo(h.msg, 'templating');
 					} else { this.w(`memories are disabled in config`) }
@@ -5017,7 +4902,6 @@ When there is no appropriate data, the value is empty. Variable names case sensi
 					let opt = {};
 					const sets = m == 1 ? this.settings.options : this.settings.req;
 					for (const i in sets) {
-						if (i == 'modelEmb') continue; //dirty hack :)
 						this.w(`processing settings param ${i}=${sets[i].v}`);
 						if (!(sets[i].v + '').length) continue;
 						this.w(`${i}=${sets[i].v}`)
