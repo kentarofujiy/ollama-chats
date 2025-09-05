@@ -1,6 +1,65 @@
 # ollama-chats v1.9.10
 Ollama chat client in Vue, everything you need to do your private text rpg in browser, with any amount of different characters, rag, per character context and more. **Now supports OpenRouter API!**
 
+## 🆕 NEW: Blessed TUI Version Available!
+
+In addition to the web-based Vue.js interface, this repository now includes a **terminal user interface (TUI) version** built with the blessed library.
+
+### Choose Your Interface:
+
+- **Web Interface (Vue.js)**: Open `index.html` in your browser for the full-featured GUI
+- **Terminal Interface (Blessed)**: Run `node tui.js` for a terminal-based chat interface
+
+### TUI Interface Preview:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Ollama Chats TUI v1.9.10                          │
+├─────────────────────────────────────────────┬───────────────────────────────┤
+│ Chat                                        │ Info                          │
+│                                             │                               │
+│ [14:32:15] You: Hello! How are you today?   │ Models:                       │
+│ [14:32:16] AI: Hello! I'm doing well...     │                               │
+│ [14:33:02] You: Can you explain a TUI?      │ > llama3.1:8b                 │
+│ [14:33:03] AI: A blessed TUI is a way to... │   llama2:7b                   │
+│                                             │   codellama:13b               │
+│                                             │                               │
+│                                             │ Hotkeys:                      │
+│                                             │ F1 - Help                     │
+│                                             │ F2 - Select Model             │
+│                                             │ F3 - Settings                 │
+│                                             │ F4 - Save Chat                │
+│                                             │ F5 - Load Chat                │
+│                                             │ F8 - Clear Chat               │
+│                                             │ Ctrl+C - Quit                 │
+├─────────────────────────────────────────────┴───────────────────────────────┤
+│ Input (Enter to send, Ctrl+C to quit)                                      │
+│ Type your message here...                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                Ready | URL: http://127.0.0.1:11434 | Model: llama3.1:8b    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**TUI Features:**
+- Beautiful terminal interface with keyboard navigation
+- Core chat functionality with Ollama and OpenRouter support
+- Model selection and management
+- Save/load chat sessions
+- Settings configuration
+- Perfect for servers, SSH sessions, or terminal enthusiasts
+
+**Quick Start:**
+```bash
+npm install
+npm start
+# or
+./run-tui.sh
+```
+
+See [README-TUI.md](README-TUI.md) for TUI-specific documentation.
+
+---
+
 ## What this is..
 This "project" is a single web page desktop interface for chatting with your local Ollama server or OpenRouter API. It doesn't use any libraries apart from Vue and can be opened in browser as a regular web page.
 
