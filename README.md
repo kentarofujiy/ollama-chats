@@ -10,6 +10,36 @@ In addition to the web-based Vue.js interface, this repository now includes a **
 - **Web Interface (Vue.js)**: Open `index.html` in your browser for the full-featured GUI
 - **Terminal Interface (Blessed)**: Run `node tui.js` for a terminal-based chat interface
 
+### TUI Interface Preview:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Ollama Chats TUI v1.9.10                          │
+├─────────────────────────────────────────────┬───────────────────────────────┤
+│ Chat                                        │ Info                          │
+│                                             │                               │
+│ [14:32:15] You: Hello! How are you today?   │ Models:                       │
+│ [14:32:16] AI: Hello! I'm doing well...     │                               │
+│ [14:33:02] You: Can you explain a TUI?      │ > llama3.1:8b                 │
+│ [14:33:03] AI: A blessed TUI is a way to... │   llama2:7b                   │
+│                                             │   codellama:13b               │
+│                                             │                               │
+│                                             │ Hotkeys:                      │
+│                                             │ F1 - Help                     │
+│                                             │ F2 - Select Model             │
+│                                             │ F3 - Settings                 │
+│                                             │ F4 - Save Chat                │
+│                                             │ F5 - Load Chat                │
+│                                             │ F8 - Clear Chat               │
+│                                             │ Ctrl+C - Quit                 │
+├─────────────────────────────────────────────┴───────────────────────────────┤
+│ Input (Enter to send, Ctrl+C to quit)                                      │
+│ Type your message here...                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                Ready | URL: http://127.0.0.1:11434 | Model: llama3.1:8b    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
 **TUI Features:**
 - Beautiful terminal interface with keyboard navigation
 - Core chat functionality with Ollama and OpenRouter support
@@ -17,6 +47,14 @@ In addition to the web-based Vue.js interface, this repository now includes a **
 - Save/load chat sessions
 - Settings configuration
 - Perfect for servers, SSH sessions, or terminal enthusiasts
+
+**Quick Start:**
+```bash
+npm install
+npm start
+# or
+./run-tui.sh
+```
 
 See [README-TUI.md](README-TUI.md) for TUI-specific documentation.
 
