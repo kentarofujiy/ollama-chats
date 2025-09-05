@@ -13,7 +13,13 @@ class OllamaChatsBlessed {
         this.config = {
             url: 'http://127.0.0.1:11434',
             model: '',
-            theme: 'dark'
+            theme: 'dark',
+            systemPrompt: '',
+            instruction: '',
+            temperature: 0.8,
+            num_ctx: 2048,
+            top_k: 40,
+            top_p: 0.9
         };
         
         this.models = [];
@@ -187,8 +193,48 @@ class OllamaChatsBlessed {
             this.loadChat();
         });
 
+        // Reload models on F6
+        this.screen.key('f6', () => {
+            this.reloadModels();
+        });
+
+        // Pull model on F7
+        this.screen.key('f7', () => {
+            this.pullModel();
+        });
+
         // Clear chat on F8
         this.screen.key('f8', () => {
+            this.clearChat();
+        });
+
+        // Advanced settings on F9
+        this.screen.key('f9', () => {
+            this.showAdvancedSettings();
+        });
+
+        // Save character card on Shift+F2
+        this.screen.key('S-f2', () => {
+            this.saveCharacterCard();
+        });
+
+        // Load character card on Shift+F3
+        this.screen.key('S-f3', () => {
+            this.loadCharacterCard();
+        });
+
+        // System prompt editor on Shift+F4
+        this.screen.key('S-f4', () => {
+            this.showSystemPromptEditor();
+        });
+
+        // Instruction editor on Shift+F5
+        this.screen.key('S-f5', () => {
+            this.showInstructionEditor();
+        });
+
+        // Clear on Shift+F8 (same as F8)
+        this.screen.key('S-f8', () => {
             this.clearChat();
         });
 
@@ -271,7 +317,15 @@ class OllamaChatsBlessed {
         content += `F3 - Settings\n`;
         content += `F4 - Save Chat\n`;
         content += `F5 - Load Chat\n`;
+        content += `F6 - Reload Models\n`;
+        content += `F7 - Pull Model\n`;
         content += `F8 - Clear Chat\n`;
+        content += `F9 - Advanced Settings\n`;
+        content += `\n{bold}Shift+F Keys:{/bold}\n`;
+        content += `Shift+F2 - Save Character\n`;
+        content += `Shift+F3 - Load Character\n`;
+        content += `Shift+F4 - System Prompt\n`;
+        content += `Shift+F5 - Instructions\n`;
         content += `Ctrl+C - Quit\n`;
         
         this.infoBox.setContent(content);
@@ -314,12 +368,46 @@ class OllamaChatsBlessed {
                 });
             });
 
+            // Add system prompt if configured
+            if (this.config.systemPrompt && this.config.systemPrompt.trim()) {
+                messages.unshift({
+                    role: 'system',
+                    content: this.config.systemPrompt.trim()
+                });
+            }
+
+            // Add instruction if configured (append to last user message)
+            if (this.config.instruction && this.config.instruction.trim() && messages.length > 0) {
+                const lastUserMsgIndex = messages.map(m => m.role).lastIndexOf('user');
+                if (lastUserMsgIndex >= 0) {
+                    messages[lastUserMsgIndex].content += '\n\n' + this.config.instruction.trim();
+                }
+            }
+
             const endpoint = isOpenRouter ? '/chat/completions' : '/api/chat';
             const requestBody = {
                 model: this.config.model,
                 messages: messages,
                 stream: false
             };
+
+            // Add advanced parameters if configured
+            if (this.config.temperature !== undefined) {
+                requestBody.options = requestBody.options || {};
+                requestBody.options.temperature = this.config.temperature;
+            }
+            if (this.config.num_ctx !== undefined) {
+                requestBody.options = requestBody.options || {};
+                requestBody.options.num_ctx = this.config.num_ctx;
+            }
+            if (this.config.top_k !== undefined) {
+                requestBody.options = requestBody.options || {};
+                requestBody.options.top_k = this.config.top_k;
+            }
+            if (this.config.top_p !== undefined) {
+                requestBody.options = requestBody.options || {};
+                requestBody.options.top_p = this.config.top_p;
+            }
 
             const headers = {
                 'Content-Type': 'application/json'
@@ -382,7 +470,15 @@ class OllamaChatsBlessed {
                      `F3  - Settings\n` +
                      `F4  - Save chat to file\n` +
                      `F5  - Load chat from file\n` +
+                     `F6  - Reload models\n` +
+                     `F7  - Pull/download model\n` +
                      `F8  - Clear current chat\n` +
+                     `F9  - Advanced settings\n` +
+                     `\n{bold}Shift+F Keys:{/bold}\n` +
+                     `Shift+F2 - Save character card\n` +
+                     `Shift+F3 - Load character card\n` +
+                     `Shift+F4 - System prompt editor\n` +
+                     `Shift+F5 - Instruction editor\n` +
                      `Ctrl+C - Quit application\n\n` +
                      `{bold}Usage:{/bold}\n` +
                      `Type your message and press Enter to send.\n` +
@@ -715,6 +811,535 @@ class OllamaChatsBlessed {
         this.turns = [];
         this.chatBox.setContent('');
         this.chatBox.log('{yellow-fg}Chat cleared{/yellow-fg}');
+        this.screen.render();
+    }
+
+    async reloadModels() {
+        this.chatBox.log('{yellow-fg}Reloading models...{/yellow-fg}');
+        this.screen.render();
+        await this.loadModels();
+    }
+
+    pullModel() {
+        if (this.config.url.includes('openrouter.ai')) {
+            this.chatBox.log('{red-fg}Model pulling is not available for OpenRouter API{/red-fg}');
+            this.screen.render();
+            return;
+        }
+
+        const input = blessed.textbox({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '60%',
+            height: 3,
+            content: '',
+            tags: true,
+            border: {
+                type: 'line'
+            },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: {
+                    fg: 'cyan'
+                }
+            },
+            label: ' Enter model name to pull (e.g., llama2, codellama:7b) ',
+            inputOnFocus: true
+        });
+
+        input.on('submit', async (modelName) => {
+            if (modelName.trim()) {
+                try {
+                    this.chatBox.log(`{yellow-fg}Pulling model: ${modelName.trim()}{/yellow-fg}`);
+                    this.updateStatus('Pulling model...');
+                    
+                    const response = await fetch(this.config.url + '/api/pull', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: modelName.trim(),
+                            stream: false
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    this.chatBox.log(`{green-fg}Model ${modelName.trim()} pulled successfully{/green-fg}`);
+                    this.updateStatus('Model pulled successfully');
+                    
+                    // Reload models to include the new one
+                    await this.loadModels();
+                    
+                } catch (error) {
+                    this.chatBox.log(`{red-fg}Error pulling model: ${error.message}{/red-fg}`);
+                    this.updateStatus(`Error: ${error.message}`);
+                }
+            }
+            
+            input.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        input.on('cancel', () => {
+            input.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        input.focus();
+        this.screen.render();
+    }
+
+    showAdvancedSettings() {
+        const form = blessed.form({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '90%',
+            height: '80%',
+            content: '',
+            tags: true,
+            border: {
+                type: 'line'
+            },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: {
+                    fg: 'cyan'
+                }
+            },
+            label: ' Advanced Settings ',
+            scrollable: true,
+            mouse: true
+        });
+
+        let y = 1;
+
+        // Temperature
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'Temperature (0.0-2.0, creativity):'
+        });
+        y += 1;
+
+        const tempInput = blessed.textbox({
+            parent: form,
+            top: y,
+            left: 2,
+            width: '30%',
+            height: 3,
+            value: this.config.temperature || '0.8',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+        y += 4;
+
+        // Context size
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'Context Size (tokens):'
+        });
+        y += 1;
+
+        const ctxInput = blessed.textbox({
+            parent: form,
+            top: y,
+            left: 2,
+            width: '30%',
+            height: 3,
+            value: this.config.num_ctx || '2048',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+        y += 4;
+
+        // Top K
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'Top K (diversity control):'
+        });
+        y += 1;
+
+        const topKInput = blessed.textbox({
+            parent: form,
+            top: y,
+            left: 2,
+            width: '30%',
+            height: 3,
+            value: this.config.top_k || '40',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+        y += 4;
+
+        // Top P
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'Top P (nucleus sampling):'
+        });
+        y += 1;
+
+        const topPInput = blessed.textbox({
+            parent: form,
+            top: y,
+            left: 2,
+            width: '30%',
+            height: 3,
+            value: this.config.top_p || '0.9',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+        y += 4;
+
+        // System prompt
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'System Prompt:'
+        });
+        y += 1;
+
+        const sysPromptInput = blessed.textarea({
+            parent: form,
+            top: y,
+            left: 2,
+            width: '90%',
+            height: 8,
+            value: this.config.systemPrompt || '',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true,
+            scrollable: true
+        });
+        y += 9;
+
+        // Buttons
+        const saveBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            left: 2,
+            width: 10,
+            height: 3,
+            content: 'Save',
+            border: { type: 'line' },
+            style: { bg: 'green', fg: 'white' }
+        });
+
+        const cancelBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            right: 2,
+            width: 10,
+            height: 3,
+            content: 'Cancel',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        saveBtn.on('press', () => {
+            // Save advanced settings
+            this.config.temperature = parseFloat(tempInput.value) || 0.8;
+            this.config.num_ctx = parseInt(ctxInput.value) || 2048;
+            this.config.top_k = parseInt(topKInput.value) || 40;
+            this.config.top_p = parseFloat(topPInput.value) || 0.9;
+            this.config.systemPrompt = sysPromptInput.value || '';
+            
+            this.chatBox.log('{green-fg}Advanced settings saved{/green-fg}');
+            this.updateInfoPanel();
+            
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        cancelBtn.on('press', () => {
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        tempInput.focus();
+        this.screen.render();
+    }
+
+    showSystemPromptEditor() {
+        const form = blessed.form({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '90%',
+            height: '80%',
+            content: '',
+            tags: true,
+            border: {
+                type: 'line'
+            },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: {
+                    fg: 'cyan'
+                }
+            },
+            label: ' System Prompt Editor '
+        });
+
+        blessed.text({
+            parent: form,
+            top: 1,
+            left: 2,
+            content: 'System Prompt (defines the AI character and behavior):'
+        });
+
+        const promptTextarea = blessed.textarea({
+            parent: form,
+            top: 3,
+            left: 2,
+            width: '95%',
+            height: '75%',
+            value: this.config.systemPrompt || '',
+            border: {
+                type: 'line'
+            },
+            style: {
+                fg: 'white',
+                bg: 'black'
+            },
+            inputOnFocus: true,
+            scrollable: true,
+            mouse: true
+        });
+
+        const saveBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            left: 2,
+            width: 10,
+            height: 3,
+            content: 'Save',
+            border: { type: 'line' },
+            style: { bg: 'green', fg: 'white' }
+        });
+
+        const cancelBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            right: 2,
+            width: 10,
+            height: 3,
+            content: 'Cancel',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        saveBtn.on('press', () => {
+            this.config.systemPrompt = promptTextarea.value;
+            this.chatBox.log('{green-fg}System prompt saved{/green-fg}');
+            
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        cancelBtn.on('press', () => {
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        promptTextarea.focus();
+        this.screen.render();
+    }
+
+    showInstructionEditor() {
+        const form = blessed.form({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '90%',
+            height: '80%',
+            content: '',
+            tags: true,
+            border: {
+                type: 'line'
+            },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: {
+                    fg: 'cyan'
+                }
+            },
+            label: ' Instruction Editor '
+        });
+
+        blessed.text({
+            parent: form,
+            top: 1,
+            left: 2,
+            content: 'Instructions (additional guidance for the current conversation):'
+        });
+
+        const instructionTextarea = blessed.textarea({
+            parent: form,
+            top: 3,
+            left: 2,
+            width: '95%',
+            height: '75%',
+            value: this.config.instruction || '',
+            border: {
+                type: 'line'
+            },
+            style: {
+                fg: 'white',
+                bg: 'black'
+            },
+            inputOnFocus: true,
+            scrollable: true,
+            mouse: true
+        });
+
+        const saveBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            left: 2,
+            width: 10,
+            height: 3,
+            content: 'Save',
+            border: { type: 'line' },
+            style: { bg: 'green', fg: 'white' }
+        });
+
+        const cancelBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            right: 2,
+            width: 10,
+            height: 3,
+            content: 'Cancel',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        saveBtn.on('press', () => {
+            this.config.instruction = instructionTextarea.value;
+            this.chatBox.log('{green-fg}Instruction saved{/green-fg}');
+            
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        cancelBtn.on('press', () => {
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        instructionTextarea.focus();
+        this.screen.render();
+    }
+
+    saveCharacterCard() {
+        const characterCard = {
+            name: this.aiNick,
+            systemPrompt: this.config.systemPrompt || '',
+            instruction: this.config.instruction || '',
+            temperature: this.config.temperature || 0.8,
+            num_ctx: this.config.num_ctx || 2048,
+            top_k: this.config.top_k || 40,
+            top_p: this.config.top_p || 0.9,
+            timestamp: new Date().toISOString()
+        };
+
+        const filename = `character-${this.aiNick.replace(/[^a-zA-Z0-9]/g, '_')}-${Date.now()}.json`;
+        try {
+            fs.writeFileSync(filename, JSON.stringify(characterCard, null, 2));
+            this.chatBox.log(`{green-fg}Character card saved to ${filename}{/green-fg}`);
+        } catch (error) {
+            this.chatBox.log(`{red-fg}Error saving character card: ${error.message}{/red-fg}`);
+        }
+        this.screen.render();
+    }
+
+    loadCharacterCard() {
+        const input = blessed.textbox({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '60%',
+            height: 3,
+            content: '',
+            tags: true,
+            border: {
+                type: 'line'
+            },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: {
+                    fg: 'cyan'
+                }
+            },
+            label: ' Enter character card filename to load ',
+            inputOnFocus: true
+        });
+
+        input.on('submit', (filename) => {
+            try {
+                if (fs.existsSync(filename)) {
+                    const characterCard = JSON.parse(fs.readFileSync(filename, 'utf8'));
+                    
+                    this.aiNick = characterCard.name || this.aiNick;
+                    this.config.systemPrompt = characterCard.systemPrompt || '';
+                    this.config.instruction = characterCard.instruction || '';
+                    this.config.temperature = characterCard.temperature || 0.8;
+                    this.config.num_ctx = characterCard.num_ctx || 2048;
+                    this.config.top_k = characterCard.top_k || 40;
+                    this.config.top_p = characterCard.top_p || 0.9;
+                    
+                    this.chatBox.log(`{green-fg}Character card loaded: ${characterCard.name || 'Unknown'}{/green-fg}`);
+                    this.updateInfoPanel();
+                } else {
+                    this.chatBox.log(`{red-fg}File not found: ${filename}{/red-fg}`);
+                }
+            } catch (error) {
+                this.chatBox.log(`{red-fg}Error loading character card: ${error.message}{/red-fg}`);
+            }
+            
+            input.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        input.on('cancel', () => {
+            input.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        input.focus();
         this.screen.render();
     }
 }
