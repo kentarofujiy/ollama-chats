@@ -31,6 +31,7 @@ class OllamaChatsBlessed {
         this.characters = []; // Available character cards
         this.memories = []; // RAG memories
         this.lastResponseRating = null;
+        this.streamEnabled = false;
         
         this.setupUI();
         this.setupEvents();
@@ -261,9 +262,24 @@ class OllamaChatsBlessed {
             this.manageMemories();
         });
 
+        // Quick settings on Shift+F10
+        this.screen.key('S-f10', () => {
+            this.showQuickSettings();
+        });
+
         // Rating system on F10
         this.screen.key('f10', () => {
             this.rateLastResponse();
+        });
+
+        // Conversation history on F11
+        this.screen.key('f11', () => {
+            this.showConversationHistory();
+        });
+
+        // Toggle streaming on F12
+        this.screen.key('f12', () => {
+            this.toggleStreaming();
         });
 
         // Input events
@@ -358,7 +374,10 @@ class OllamaChatsBlessed {
         content += `Shift+F6 - Export Data\n`;
         content += `Shift+F7 - Generate Character\n`;
         content += `Shift+F9 - Manage Memories\n`;
+        content += `Shift+F10 - Quick Settings\n`;
         content += `F10 - Rate Response\n`;
+        content += `F11 - Conversation History\n`;
+        content += `F12 - Toggle Streaming\n`;
         content += `Ctrl+C - Quit\n`;
         
         this.infoBox.setContent(content);
@@ -431,7 +450,7 @@ class OllamaChatsBlessed {
             const requestBody = {
                 model: this.config.model,
                 messages: messages,
-                stream: false
+                stream: this.streamEnabled && !isOpenRouter // OpenRouter doesn't work well with streaming in this implementation
             };
 
             // Add advanced parameters if configured
@@ -457,33 +476,39 @@ class OllamaChatsBlessed {
             };
 
             if (isOpenRouter) {
-                // Add API key for OpenRouter
                 headers['Authorization'] = `Bearer ${this.config.openrouterKey || ''}`;
                 headers['HTTP-Referer'] = 'https://github.com/kentarofujiy/ollama-chats';
                 headers['X-Title'] = 'Ollama Chats Blessed';
             }
 
-            const response = await fetch(this.config.url + endpoint, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(requestBody)
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            
-            let aiResponse = '';
-            if (isOpenRouter) {
-                aiResponse = data.choices?.[0]?.message?.content || 'No response';
+            if (this.streamEnabled && !isOpenRouter) {
+                // Handle streaming response
+                await this.handleStreamingResponse(requestBody, headers, endpoint);
             } else {
-                aiResponse = data.message?.content || 'No response';
+                // Handle regular response
+                const response = await fetch(this.config.url + endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                let aiResponse = '';
+                if (isOpenRouter) {
+                    aiResponse = data.choices?.[0]?.message?.content || 'No response';
+                } else {
+                    aiResponse = data.message?.content || 'No response';
+                }
+
+                this.addMessage(this.aiNick, aiResponse, false);
             }
 
-            this.addMessage(this.aiNick, aiResponse, false);
-            this.updateStatus(`Ready | Model: ${this.config.model} | Press F10 to rate response`);
+            this.updateStatus(`Ready | Model: ${this.config.model} | Press F10 to rate response | Streaming: ${this.streamEnabled ? 'on' : 'off'}`);
             
         } catch (error) {
             this.chatBox.log(`{red-fg}Error: ${error.message}{/red-fg}`);
@@ -518,6 +543,8 @@ class OllamaChatsBlessed {
                      `F8  - Clear current chat\n` +
                      `F9  - Advanced settings\n` +
                      `F10 - Rate last AI response\n` +
+                     `F11 - Conversation history\n` +
+                     `F12 - Toggle streaming mode\n` +
                      `\n{bold}Shift+F Keys:{/bold}\n` +
                      `Shift+F1 - Browse character cards\n` +
                      `Shift+F2 - Save character card\n` +
@@ -527,6 +554,7 @@ class OllamaChatsBlessed {
                      `Shift+F6 - Export data (various formats)\n` +
                      `Shift+F7 - Generate character\n` +
                      `Shift+F9 - Manage memories (RAG)\n` +
+                     `Shift+F10 - Quick settings panel\n` +
                      `Ctrl+C - Quit application\n\n` +
                      `{bold}Usage:{/bold}\n` +
                      `Type your message and press Enter to send.\n` +
@@ -2052,6 +2080,524 @@ class OllamaChatsBlessed {
             .sort((a, b) => b.score - a.score)
             .slice(0, 3)
             .map(item => item.memory);
+    }
+
+    showConversationHistory() {
+        if (this.turns.length === 0) {
+            this.chatBox.log('{yellow-fg}No conversation history available.{/yellow-fg}');
+            this.screen.render();
+            return;
+        }
+
+        const list = blessed.list({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '90%',
+            height: '80%',
+            items: this.turns.map((turn, index) => {
+                const timestamp = turn.timestamp ? new Date(turn.timestamp).toLocaleTimeString() : 'Unknown';
+                const rating = turn.rating !== undefined ? ` [${['💀', '⭐', '⭐⭐', '⭐⭐⭐'][turn.rating]}]` : '';
+                const preview = turn.content.length > 80 ? turn.content.substring(0, 80) + '...' : turn.content;
+                return `${index + 1}. [${timestamp}] ${turn.nick}: ${preview}${rating}`;
+            }),
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'cyan' },
+                selected: { bg: 'blue' }
+            },
+            label: ' Conversation History ',
+            keys: true,
+            mouse: true,
+            scrollable: true
+        });
+
+        const actionsBox = blessed.box({
+            parent: list,
+            bottom: 2,
+            left: 2,
+            right: 2,
+            height: 3,
+            content: '{center}Press Enter to view details, D to delete, Escape to close{/center}',
+            tags: true,
+            style: { fg: 'yellow' }
+        });
+
+        list.on('select', () => {
+            const selectedTurn = this.turns[list.selected];
+            this.showMessageDetails(selectedTurn, list);
+        });
+
+        list.key('d', () => {
+            if (list.selected < this.turns.length) {
+                this.confirmDeleteMessage(list.selected, list);
+            }
+        });
+
+        list.on('cancel', () => {
+            list.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        list.focus();
+        this.screen.render();
+    }
+
+    showMessageDetails(turn, parentList) {
+        const detail = blessed.message({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '80%',
+            height: '70%',
+            content: `{bold}Message Details{/bold}\n\n` +
+                     `{bold}From:{/bold} ${turn.nick}\n` +
+                     `{bold}Time:{/bold} ${turn.timestamp ? new Date(turn.timestamp).toLocaleString() : 'Unknown'}\n` +
+                     `{bold}Rating:{/bold} ${turn.rating !== undefined ? ['Terrible', 'Poor', 'Good', 'Excellent'][turn.rating] : 'Not rated'}\n` +
+                     `{bold}Type:{/bold} ${turn.isUser ? 'User' : 'AI'}\n\n` +
+                     `{bold}Content:{/bold}\n${turn.content}\n\n` +
+                     `Press any key to close`,
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'green' }
+            }
+        });
+
+        detail.focus();
+        detail.on('keypress', () => {
+            detail.destroy();
+            parentList.focus();
+            this.screen.render();
+        });
+
+        this.screen.render();
+    }
+
+    confirmDeleteMessage(index, parentList) {
+        const turn = this.turns[index];
+        const confirm = blessed.question({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '50%',
+            height: '20%',
+            content: `Delete message from ${turn.nick}?\nThis action cannot be undone.`,
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'red' }
+            }
+        });
+
+        confirm.ask('', (err, value) => {
+            if (value && value.toLowerCase().startsWith('y')) {
+                this.turns.splice(index, 1);
+                this.chatBox.log(`{green-fg}Message deleted{/green-fg}`);
+                
+                // Rebuild chat display
+                this.chatBox.setContent('');
+                this.turns.forEach(turn => {
+                    const timestamp = turn.timestamp ? new Date(turn.timestamp).toLocaleTimeString() : 'Unknown';
+                    const color = turn.isUser ? 'cyan' : 'green';
+                    const message = `{bold}[${timestamp}] ${turn.nick}:{/bold} {${color}-fg}${turn.content}{/${color}-fg}`;
+                    this.chatBox.log(message);
+                });
+            }
+            parentList.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+    }
+
+    toggleStreaming() {
+        this.streamEnabled = !this.streamEnabled;
+        const status = this.streamEnabled ? 'enabled' : 'disabled';
+        this.chatBox.log(`{yellow-fg}Streaming mode ${status}{/yellow-fg}`);
+        this.updateStatus(`Streaming: ${status} | Model: ${this.config.model}`);
+        this.screen.render();
+    }
+
+    // Enhanced sendMessage with streaming support
+    async sendMessage(content) {
+        if (!this.config.model) {
+            this.chatBox.log('{red-fg}No model selected. Press F2 to select a model.{/red-fg}');
+            this.screen.render();
+            return;
+        }
+
+        // Add user message
+        this.addMessage(this.nick, content, true);
+        
+        // Show thinking indicator
+        this.updateStatus('AI is thinking...');
+        
+        try {
+            const isOpenRouter = this.config.url.includes('openrouter.ai');
+            
+            let messages = [];
+            
+            // Build conversation history
+            this.turns.forEach(turn => {
+                messages.push({
+                    role: turn.isUser ? 'user' : 'assistant',
+                    content: turn.content
+                });
+            });
+
+            // Add system prompt if configured
+            let systemPrompt = this.config.systemPrompt || '';
+            
+            // Add relevant memories to system prompt
+            if (this.memories.length > 0) {
+                const relevantMemories = this.findRelevantMemories(content);
+                if (relevantMemories.length > 0) {
+                    systemPrompt += '\n\nRelevant memories:\n' + relevantMemories.join('\n');
+                }
+            }
+
+            if (systemPrompt.trim()) {
+                messages.unshift({
+                    role: 'system',
+                    content: systemPrompt.trim()
+                });
+            }
+
+            // Add instruction if configured (append to last user message)
+            if (this.config.instruction && this.config.instruction.trim() && messages.length > 0) {
+                const lastUserMsgIndex = messages.map(m => m.role).lastIndexOf('user');
+                if (lastUserMsgIndex >= 0) {
+                    messages[lastUserMsgIndex].content += '\n\n' + this.config.instruction.trim();
+                }
+            }
+
+            const endpoint = isOpenRouter ? '/chat/completions' : '/api/chat';
+            const requestBody = {
+                model: this.config.model,
+                messages: messages,
+                stream: this.streamEnabled && !isOpenRouter // OpenRouter doesn't work well with streaming in this implementation
+            };
+
+            // Add advanced parameters if configured
+            if (this.config.temperature !== undefined) {
+                requestBody.options = requestBody.options || {};
+                requestBody.options.temperature = this.config.temperature;
+            }
+            if (this.config.num_ctx !== undefined) {
+                requestBody.options = requestBody.options || {};
+                requestBody.options.num_ctx = this.config.num_ctx;
+            }
+            if (this.config.top_k !== undefined) {
+                requestBody.options = requestBody.options || {};
+                requestBody.options.top_k = this.config.top_k;
+            }
+            if (this.config.top_p !== undefined) {
+                requestBody.options = requestBody.options || {};
+                requestBody.options.top_p = this.config.top_p;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            if (isOpenRouter) {
+                headers['Authorization'] = `Bearer ${this.config.openrouterKey || ''}`;
+                headers['HTTP-Referer'] = 'https://github.com/kentarofujiy/ollama-chats';
+                headers['X-Title'] = 'Ollama Chats Blessed';
+            }
+
+            if (this.streamEnabled && !isOpenRouter) {
+                // Handle streaming response
+                await this.handleStreamingResponse(requestBody, headers, endpoint);
+            } else {
+                // Handle regular response
+                const response = await fetch(this.config.url + endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                let aiResponse = '';
+                if (isOpenRouter) {
+                    aiResponse = data.choices?.[0]?.message?.content || 'No response';
+                } else {
+                    aiResponse = data.message?.content || 'No response';
+                }
+
+                this.addMessage(this.aiNick, aiResponse, false);
+            }
+
+            this.updateStatus(`Ready | Model: ${this.config.model} | Press F10 to rate response | Streaming: ${this.streamEnabled ? 'on' : 'off'}`);
+            
+        } catch (error) {
+            this.chatBox.log(`{red-fg}Error: ${error.message}{/red-fg}`);
+            this.updateStatus(`Error: ${error.message}`);
+        }
+        
+        this.inputBox.focus();
+    }
+
+    async handleStreamingResponse(requestBody, headers, endpoint) {
+        const response = await fetch(this.config.url + endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        let aiResponse = '';
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        // Add a placeholder message that we'll update
+        const timestamp = new Date().toLocaleTimeString();
+        const placeholderMessage = `{bold}[${timestamp}] ${this.aiNick}:{/bold} {green-fg}[Streaming...]{/green-fg}`;
+        this.chatBox.log(placeholderMessage);
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.trim() && line.startsWith('data: ')) {
+                        try {
+                            const jsonStr = line.slice(6);
+                            if (jsonStr.trim() === '[DONE]') continue;
+                            
+                            const data = JSON.parse(jsonStr);
+                            if (data.message?.content) {
+                                aiResponse += data.message.content;
+                                
+                                // Update the display in real-time
+                                const updatedMessage = `{bold}[${timestamp}] ${this.aiNick}:{/bold} {green-fg}${aiResponse}{/green-fg}`;
+                                // Replace the last line in the chat
+                                const content = this.chatBox.getContent();
+                                const lines = content.split('\n');
+                                lines[lines.length - 1] = updatedMessage;
+                                this.chatBox.setContent(lines.join('\n'));
+                                this.screen.render();
+                            }
+                        } catch (e) {
+                            // Ignore JSON parse errors for partial chunks
+                        }
+                    }
+                }
+            }
+        } finally {
+            reader.releaseLock();
+        }
+
+        // Add the complete message to turns
+        if (aiResponse) {
+            this.turns.push({
+                nick: this.aiNick,
+                content: aiResponse,
+                timestamp: new Date().toISOString(),
+                isUser: false
+            });
+        }
+    }
+
+    showQuickSettings() {
+        const form = blessed.form({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '80%',
+            height: '70%',
+            content: '',
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'cyan' }
+            },
+            label: ' Quick Settings ',
+            scrollable: true,
+            mouse: true
+        });
+
+        let y = 1;
+
+        // Quick temperature
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'Temperature (creativity):'
+        });
+        y += 1;
+
+        const tempInput = blessed.textbox({
+            parent: form,
+            top: y,
+            left: 2,
+            width: '25%',
+            height: 3,
+            value: this.config.temperature || '0.8',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+        y += 4;
+
+        // Streaming toggle
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'Streaming Mode:'
+        });
+        y += 1;
+
+        const streamCheckbox = blessed.checkbox({
+            parent: form,
+            top: y,
+            left: 2,
+            width: 20,
+            height: 3,
+            content: 'Enable Streaming',
+            checked: this.streamEnabled,
+            style: { fg: 'white', bg: 'black' }
+        });
+        y += 4;
+
+        // AI nickname
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'AI Nickname:'
+        });
+        y += 1;
+
+        const aiNickInput = blessed.textbox({
+            parent: form,
+            top: y,
+            left: 2,
+            width: '40%',
+            height: 3,
+            value: this.aiNick,
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+        y += 4;
+
+        // Context size
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: 'Context Size:'
+        });
+        y += 1;
+
+        const ctxInput = blessed.textbox({
+            parent: form,
+            top: y,
+            left: 2,
+            width: '25%',
+            height: 3,
+            value: this.config.num_ctx || '2048',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+        y += 4;
+
+        // Current model info
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: `Current Model: ${this.config.model || 'None selected'}`
+        });
+        y += 2;
+
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: `Total Memories: ${this.memories.length}`
+        });
+        y += 2;
+
+        blessed.text({
+            parent: form,
+            top: y,
+            left: 2,
+            content: `Messages in Chat: ${this.turns.length}`
+        });
+
+        // Buttons
+        const saveBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            left: 2,
+            width: 10,
+            height: 3,
+            content: 'Apply',
+            border: { type: 'line' },
+            style: { bg: 'green', fg: 'white' }
+        });
+
+        const cancelBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            right: 2,
+            width: 10,
+            height: 3,
+            content: 'Cancel',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        saveBtn.on('press', () => {
+            // Apply changes
+            this.config.temperature = parseFloat(tempInput.value) || 0.8;
+            this.config.num_ctx = parseInt(ctxInput.value) || 2048;
+            this.aiNick = aiNickInput.value || 'AI';
+            this.streamEnabled = streamCheckbox.checked;
+            
+            this.chatBox.log('{green-fg}Quick settings applied{/green-fg}');
+            this.updateInfoPanel();
+            
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        cancelBtn.on('press', () => {
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        tempInput.focus();
+        this.screen.render();
     }
 }
 

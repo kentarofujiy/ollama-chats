@@ -60,6 +60,8 @@ node tui.js
 | **F8** | Clear current chat |
 | **F9** | Advanced settings (AI parameters) |
 | **F10** | Rate last AI response |
+| **F11** | Conversation history |
+| **F12** | Toggle streaming mode |
 
 ### Shift+F Keys (Advanced Features)
 
@@ -113,6 +115,18 @@ node tui.js
 - **Character Persistence**: Save and restore character configurations
 - **Enhanced Export**: Export chats, characters, or complete data packages
 
+### Conversation Management
+- **Message History**: Browse complete conversation history with F11
+- **Message Details**: View individual message details including timestamps and ratings
+- **Message Deletion**: Remove unwanted messages from conversation history
+- **Message Rating Integration**: See ratings displayed in conversation history
+
+### Streaming Responses
+- **Real-time Streaming**: Toggle streaming mode with F12 for real-time response generation
+- **Live Updates**: Watch AI responses appear character by character (Ollama only)
+- **Streaming Toggle**: Easily switch between streaming and standard response modes
+- **Compatibility**: Streaming works with local Ollama, standard mode for OpenRouter
+
 ## Configuration Examples
 
 ### Creating a Character
@@ -143,6 +157,18 @@ node tui.js
 2. Use Enter to load a character or D to delete it
 3. Character files are saved as "character-[name]-[timestamp].json"
 4. Use **Shift+F6** for advanced export options
+
+### Conversation Management
+1. Press **F11** to browse complete conversation history
+2. View message details including timestamps and ratings
+3. Use D to delete unwanted messages from the conversation
+4. See rating indicators next to each message
+
+### Streaming Mode
+1. Press **F12** to toggle streaming mode on/off
+2. In streaming mode, AI responses appear in real-time
+3. Streaming works with local Ollama (not OpenRouter)
+4. Current streaming status shown in the status bar
 | **Enter** | Send message |
 | **Escape** | Cancel current action |
 
@@ -236,7 +262,10 @@ The TUI version uses the same APIs as the original:
 - ✅ Memory/RAG system (Shift+F9) - Add contextual memories for better responses
 - ✅ Response rating (F10) - Rate AI responses to track quality
 - ✅ Enhanced export (Shift+F6) - Export chats, characters, or complete data
+- ✅ Conversation history (F11) - Browse, view details, and manage chat history
+- ✅ Streaming mode (F12) - Real-time response streaming (Ollama only)
 - ✅ Improved memory integration - Relevant memories automatically included in context
+- ✅ Message management - View, rate, and delete individual messages
 
 ### Future Enhancements
 
