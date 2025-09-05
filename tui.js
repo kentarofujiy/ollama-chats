@@ -233,6 +233,11 @@ class OllamaChatsBlessed {
             this.showInstructionEditor();
         });
 
+        // Generate character on Shift+F7
+        this.screen.key('S-f7', () => {
+            this.generateCharacter();
+        });
+
         // Clear on Shift+F8 (same as F8)
         this.screen.key('S-f8', () => {
             this.clearChat();
@@ -326,6 +331,7 @@ class OllamaChatsBlessed {
         content += `Shift+F3 - Load Character\n`;
         content += `Shift+F4 - System Prompt\n`;
         content += `Shift+F5 - Instructions\n`;
+        content += `Shift+F7 - Generate Character\n`;
         content += `Ctrl+C - Quit\n`;
         
         this.infoBox.setContent(content);
@@ -479,6 +485,7 @@ class OllamaChatsBlessed {
                      `Shift+F3 - Load character card\n` +
                      `Shift+F4 - System prompt editor\n` +
                      `Shift+F5 - Instruction editor\n` +
+                     `Shift+F7 - Generate character\n` +
                      `Ctrl+C - Quit application\n\n` +
                      `{bold}Usage:{/bold}\n` +
                      `Type your message and press Enter to send.\n` +
@@ -1340,6 +1347,174 @@ class OllamaChatsBlessed {
         });
 
         input.focus();
+        this.screen.render();
+    }
+
+    generateCharacter() {
+        if (!this.config.model) {
+            this.chatBox.log('{red-fg}No model selected. Please select a model first (F2).{/red-fg}');
+            this.screen.render();
+            return;
+        }
+
+        const form = blessed.form({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '80%',
+            height: '70%',
+            content: '',
+            tags: true,
+            border: {
+                type: 'line'
+            },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: {
+                    fg: 'cyan'
+                }
+            },
+            label: ' Generate Character '
+        });
+
+        blessed.text({
+            parent: form,
+            top: 1,
+            left: 2,
+            content: 'Character traits/keywords (e.g., "mysterious detective, sarcastic, intelligent"):'
+        });
+
+        const traitsInput = blessed.textbox({
+            parent: form,
+            top: 3,
+            left: 2,
+            width: '90%',
+            height: 3,
+            value: '',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+
+        blessed.text({
+            parent: form,
+            top: 7,
+            left: 2,
+            content: 'Character name (optional):'
+        });
+
+        const nameInput = blessed.textbox({
+            parent: form,
+            top: 9,
+            left: 2,
+            width: '90%',
+            height: 3,
+            value: '',
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true
+        });
+
+        const generateBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            left: 2,
+            width: 12,
+            height: 3,
+            content: 'Generate',
+            border: { type: 'line' },
+            style: { bg: 'green', fg: 'white' }
+        });
+
+        const cancelBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            right: 2,
+            width: 10,
+            height: 3,
+            content: 'Cancel',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        generateBtn.on('press', async () => {
+            const traits = traitsInput.value.trim();
+            const name = nameInput.value.trim() || 'AI Character';
+
+            if (!traits) {
+                this.chatBox.log('{red-fg}Please enter some character traits.{/red-fg}');
+                this.screen.render();
+                return;
+            }
+
+            form.destroy();
+            this.inputBox.focus();
+
+            try {
+                this.chatBox.log(`{yellow-fg}Generating character with traits: ${traits}{/yellow-fg}`);
+                this.updateStatus('Generating character...');
+
+                const generatePrompt = `Create a detailed character system prompt for an AI character with these traits: ${traits}. The character's name is ${name}. Write a comprehensive system prompt that defines their personality, background, speaking style, and behavior. Start with "You are ${name}..." and make it detailed and engaging. Only return the system prompt, no additional text.`;
+
+                const isOpenRouter = this.config.url.includes('openrouter.ai');
+                const endpoint = isOpenRouter ? '/chat/completions' : '/api/chat';
+                
+                const requestBody = {
+                    model: this.config.model,
+                    messages: [{ role: 'user', content: generatePrompt }],
+                    stream: false
+                };
+
+                const headers = { 'Content-Type': 'application/json' };
+                if (isOpenRouter) {
+                    headers['Authorization'] = `Bearer ${this.config.openrouterKey || ''}`;
+                    headers['HTTP-Referer'] = 'https://github.com/kentarofujiy/ollama-chats';
+                    headers['X-Title'] = 'Ollama Chats Blessed';
+                }
+
+                const response = await fetch(this.config.url + endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                let generatedPrompt = '';
+                
+                if (isOpenRouter) {
+                    generatedPrompt = data.choices?.[0]?.message?.content || 'Failed to generate character';
+                } else {
+                    generatedPrompt = data.message?.content || 'Failed to generate character';
+                }
+
+                this.config.systemPrompt = generatedPrompt;
+                this.aiNick = name;
+                
+                this.chatBox.log(`{green-fg}Character "${name}" generated successfully!{/green-fg}`);
+                this.chatBox.log(`{blue-fg}Use Shift+F4 to view/edit the generated system prompt.{/blue-fg}`);
+                this.updateStatus(`Character generated: ${name}`);
+                this.updateInfoPanel();
+
+            } catch (error) {
+                this.chatBox.log(`{red-fg}Error generating character: ${error.message}{/red-fg}`);
+                this.updateStatus(`Error: ${error.message}`);
+            }
+
+            this.screen.render();
+        });
+
+        cancelBtn.on('press', () => {
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        traitsInput.focus();
         this.screen.render();
     }
 }

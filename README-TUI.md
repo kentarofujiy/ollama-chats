@@ -5,12 +5,15 @@ A terminal user interface (TUI) version of Ollama Chats using the blessed librar
 ## Features
 
 - **Terminal Interface**: Beautiful terminal UI using the blessed library
-- **Chat Interface**: Full conversation support with message history
-- **Model Management**: List, select, and switch between Ollama models
+- **Chat Interface**: Full conversation support with message history and timestamps
+- **Model Management**: List, select, switch between, reload, and download Ollama models
+- **Advanced Configuration**: Complete parameter control (temperature, top_k, top_p, context size)
+- **Character System**: Create, save, load, and generate AI characters with system prompts
+- **Instruction System**: Add conversation-specific guidance and instructions
 - **OpenRouter Support**: Works with OpenRouter API for cloud models
 - **Save/Load Chats**: Save conversations to JSON files and load them later
 - **Settings**: Configure URL, nicknames, and other preferences
-- **Keyboard Navigation**: Full keyboard support with hotkeys
+- **Keyboard Navigation**: Full keyboard support with extensive hotkeys
 
 ## Installation
 
@@ -49,11 +52,61 @@ node tui.js
 |-----|--------|
 | **F1** | Show help |
 | **F2** | Select model |
-| **F3** | Settings (URL, nicknames) |
+| **F3** | Basic settings (URL, nicknames) |
 | **F4** | Save chat to file |
 | **F5** | Load chat from file |
+| **F6** | Reload models |
+| **F7** | Pull/download new model |
 | **F8** | Clear current chat |
+| **F9** | Advanced settings (AI parameters) |
+
+### Shift+F Keys (Advanced Features)
+
+| Key | Action |
+|-----|--------|
+| **Shift+F2** | Save character card |
+| **Shift+F3** | Load character card |
+| **Shift+F4** | System prompt editor |
+| **Shift+F5** | Instruction editor |
+| **Shift+F7** | Generate character automatically |
 | **Ctrl+C** | Quit application |
+
+## Advanced Features
+
+### Character Management
+- **Character Cards**: Save and load complete AI character profiles including system prompts, instructions, and parameters
+- **System Prompts**: Define detailed character personalities, backgrounds, and behaviors
+- **Instructions**: Add conversation-specific guidance that gets included with user messages
+- **Character Generation**: Automatically generate characters based on trait descriptions
+
+### Model Management
+- **Model Selection**: Browse and switch between available models
+- **Model Downloading**: Pull new models directly from Ollama library (llama2, codellama, etc.)
+- **Model Reloading**: Refresh the model list to detect newly installed models
+
+### Advanced AI Configuration
+- **Temperature**: Control creativity and randomness (0.0-2.0)
+- **Context Size**: Set memory window in tokens (default: 2048)
+- **Top K**: Control diversity of token selection (default: 40)
+- **Top P**: Nucleus sampling parameter (default: 0.9)
+
+### Session Management
+- **Chat Persistence**: Save complete conversation history with timestamps
+- **Multiple Sessions**: Load different chat sessions as needed
+- **Character Persistence**: Save and restore character configurations
+
+## Configuration Examples
+
+### Creating a Character
+1. Press **Shift+F7** to generate a character automatically
+2. Enter traits like "mysterious detective, sarcastic, intelligent"
+3. Or manually create using **Shift+F4** for system prompt editing
+
+### Fine-tuning AI Behavior
+1. Press **F9** for advanced settings
+2. Adjust temperature for creativity (higher = more creative)
+3. Increase context size for longer memory
+4. Use **Shift+F5** to add conversation-specific instructions
 | **Enter** | Send message |
 | **Escape** | Cancel current action |
 
@@ -118,21 +171,27 @@ The TUI version uses the same APIs as the original:
 
 ### Included Features
 - ✅ Basic chat interface
-- ✅ Model selection
-- ✅ Save/load conversations
+- ✅ Model selection and management
+- ✅ Model downloading (pull new models)
+- ✅ Save/load conversations  
+- ✅ Character card save/load
+- ✅ System prompt editing
+- ✅ Instruction editing
+- ✅ Character generation
+- ✅ Advanced AI parameter configuration
 - ✅ OpenRouter support
 - ✅ Settings configuration
 - ✅ Keyboard navigation
 
 ### Not Yet Implemented
-- ❌ Multiple characters/personas
-- ❌ RAG (Retrieval-Augmented Generation)
-- ❌ Character generator
+- ❌ Multiple characters/personas simultaneously
+- ❌ RAG (Retrieval-Augmented Generation) / Memory system
 - ❌ Image upload support
-- ❌ Advanced prompt templates
-- ❌ Rating system
-- ❌ Stories/context management
-- ❌ Parameter optimization
+- ❌ Trinity mode (thoughts/actions separation)
+- ❌ Rating system for responses
+- ❌ Branching conversations
+- ❌ Stories/context management per character
+- ❌ Parameter auto-tuning
 
 ### Future Enhancements
 
