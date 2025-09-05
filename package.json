@@ -1,0 +1,21 @@
+{
+  "name": "ollama-chats-blessed",
+  "version": "1.9.10",
+  "description": "Ollama chat client in blessed TUI instead of Vue",
+  "main": "tui.js",
+  "type": "module",
+  "scripts": {
+    "start": "node tui.js",
+    "dev": "node tui.js"
+  },
+  "keywords": ["ollama", "chat", "tui", "blessed", "terminal"],
+  "author": "kentarofujiy",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
