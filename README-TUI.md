@@ -59,22 +59,27 @@ node tui.js
 | **F7** | Pull/download new model |
 | **F8** | Clear current chat |
 | **F9** | Advanced settings (AI parameters) |
+| **F10** | Rate last AI response |
 
 ### Shift+F Keys (Advanced Features)
 
 | Key | Action |
 |-----|--------|
+| **Shift+F1** | Browse character cards |
 | **Shift+F2** | Save character card |
 | **Shift+F3** | Load character card |
 | **Shift+F4** | System prompt editor |
 | **Shift+F5** | Instruction editor |
+| **Shift+F6** | Export data (various formats) |
 | **Shift+F7** | Generate character automatically |
+| **Shift+F9** | Manage memories (RAG) |
 | **Ctrl+C** | Quit application |
 
 ## Advanced Features
 
 ### Character Management
 - **Character Cards**: Save and load complete AI character profiles including system prompts, instructions, and parameters
+- **Character Browser**: Browse, preview, load, and delete character cards with Shift+F1
 - **System Prompts**: Define detailed character personalities, backgrounds, and behaviors
 - **Instructions**: Add conversation-specific guidance that gets included with user messages
 - **Character Generation**: Automatically generate characters based on trait descriptions
@@ -83,6 +88,13 @@ node tui.js
 - **Model Selection**: Browse and switch between available models
 - **Model Downloading**: Pull new models directly from Ollama library (llama2, codellama, etc.)
 - **Model Reloading**: Refresh the model list to detect newly installed models
+- **Support for both Ollama and OpenRouter APIs**
+
+### Memory System (RAG)
+- **Contextual Memories**: Add character-specific memories that are automatically included in relevant conversations
+- **Smart Retrieval**: Simple keyword-based memory search (can be enhanced with embeddings)
+- **Memory Management**: Add, edit, and organize memories through Shift+F9
+- **Automatic Integration**: Relevant memories are automatically included in AI context
 
 ### Advanced AI Configuration
 - **Temperature**: Control creativity and randomness (0.0-2.0)
@@ -90,10 +102,16 @@ node tui.js
 - **Top K**: Control diversity of token selection (default: 40)
 - **Top P**: Nucleus sampling parameter (default: 0.9)
 
+### Response Rating
+- **Quality Tracking**: Rate AI responses as Excellent, Good, Poor, or Terrible
+- **Response History**: Track which responses were good or bad for future reference
+- **Quick Rating**: Press F10 immediately after an AI response to rate it
+
 ### Session Management
 - **Chat Persistence**: Save complete conversation history with timestamps
 - **Multiple Sessions**: Load different chat sessions as needed
 - **Character Persistence**: Save and restore character configurations
+- **Enhanced Export**: Export chats, characters, or complete data packages
 
 ## Configuration Examples
 
@@ -107,6 +125,24 @@ node tui.js
 2. Adjust temperature for creativity (higher = more creative)
 3. Increase context size for longer memory
 4. Use **Shift+F5** to add conversation-specific instructions
+
+### Managing Character Memories
+1. Press **Shift+F9** to open memory management
+2. Add character-specific memories (one per line)
+3. These memories will be automatically included when relevant to the conversation
+4. Example memories: "I love coffee", "I'm afraid of spiders", "I work as a detective"
+
+### Rating and Improving Responses
+1. After any AI response, press **F10** to rate it
+2. Choose from Excellent, Good, Poor, or Terrible
+3. Use ratings to track which characters and settings work best
+4. Consider adjusting parameters based on poor ratings
+
+### Character Organization
+1. Press **Shift+F1** to browse all saved characters
+2. Use Enter to load a character or D to delete it
+3. Character files are saved as "character-[name]-[timestamp].json"
+4. Use **Shift+F6** for advanced export options
 | **Enter** | Send message |
 | **Escape** | Cancel current action |
 
@@ -174,7 +210,7 @@ The TUI version uses the same APIs as the original:
 - ✅ Model selection and management
 - ✅ Model downloading (pull new models)
 - ✅ Save/load conversations  
-- ✅ Character card save/load
+- ✅ Character card save/load/browse/delete
 - ✅ System prompt editing
 - ✅ Instruction editing
 - ✅ Character generation
@@ -182,16 +218,25 @@ The TUI version uses the same APIs as the original:
 - ✅ OpenRouter support
 - ✅ Settings configuration
 - ✅ Keyboard navigation
+- ✅ Memory/RAG system for contextual responses
+- ✅ Response rating system
+- ✅ Enhanced data export options
 
 ### Not Yet Implemented
-- ❌ Multiple characters/personas simultaneously
-- ❌ RAG (Retrieval-Augmented Generation) / Memory system
+- ❌ Multiple characters/personas simultaneously in single chat
 - ❌ Image upload support
 - ❌ Trinity mode (thoughts/actions separation)
-- ❌ Rating system for responses
+- ❌ Advanced embedding-based RAG
 - ❌ Branching conversations
 - ❌ Stories/context management per character
 - ❌ Parameter auto-tuning
+
+### Recently Added Features
+- ✅ Character browser (Shift+F1) - Browse, load, and delete character cards
+- ✅ Memory/RAG system (Shift+F9) - Add contextual memories for better responses
+- ✅ Response rating (F10) - Rate AI responses to track quality
+- ✅ Enhanced export (Shift+F6) - Export chats, characters, or complete data
+- ✅ Improved memory integration - Relevant memories automatically included in context
 
 ### Future Enhancements
 

@@ -28,6 +28,9 @@ class OllamaChatsBlessed {
         this.currentMessage = '';
         this.nick = 'You';
         this.aiNick = 'AI';
+        this.characters = []; // Available character cards
+        this.memories = []; // RAG memories
+        this.lastResponseRating = null;
         
         this.setupUI();
         this.setupEvents();
@@ -243,6 +246,26 @@ class OllamaChatsBlessed {
             this.clearChat();
         });
 
+        // Character browser on Shift+F1
+        this.screen.key('S-f1', () => {
+            this.browseCharacters();
+        });
+
+        // Export chat/character on Shift+F6
+        this.screen.key('S-f6', () => {
+            this.exportData();
+        });
+
+        // Memory/RAG management on Shift+F9
+        this.screen.key('S-f9', () => {
+            this.manageMemories();
+        });
+
+        // Rating system on F10
+        this.screen.key('f10', () => {
+            this.rateLastResponse();
+        });
+
         // Input events
         this.inputBox.on('submit', (value) => {
             if (value.trim()) {
@@ -327,11 +350,15 @@ class OllamaChatsBlessed {
         content += `F8 - Clear Chat\n`;
         content += `F9 - Advanced Settings\n`;
         content += `\n{bold}Shift+F Keys:{/bold}\n`;
+        content += `Shift+F1 - Browse Characters\n`;
         content += `Shift+F2 - Save Character\n`;
         content += `Shift+F3 - Load Character\n`;
         content += `Shift+F4 - System Prompt\n`;
         content += `Shift+F5 - Instructions\n`;
+        content += `Shift+F6 - Export Data\n`;
         content += `Shift+F7 - Generate Character\n`;
+        content += `Shift+F9 - Manage Memories\n`;
+        content += `F10 - Rate Response\n`;
         content += `Ctrl+C - Quit\n`;
         
         this.infoBox.setContent(content);
@@ -375,10 +402,20 @@ class OllamaChatsBlessed {
             });
 
             // Add system prompt if configured
-            if (this.config.systemPrompt && this.config.systemPrompt.trim()) {
+            let systemPrompt = this.config.systemPrompt || '';
+            
+            // Add relevant memories to system prompt
+            if (this.memories.length > 0) {
+                const relevantMemories = this.findRelevantMemories(content);
+                if (relevantMemories.length > 0) {
+                    systemPrompt += '\n\nRelevant memories:\n' + relevantMemories.join('\n');
+                }
+            }
+
+            if (systemPrompt.trim()) {
                 messages.unshift({
                     role: 'system',
-                    content: this.config.systemPrompt.trim()
+                    content: systemPrompt.trim()
                 });
             }
 
@@ -446,7 +483,7 @@ class OllamaChatsBlessed {
             }
 
             this.addMessage(this.aiNick, aiResponse, false);
-            this.updateStatus(`Ready | Model: ${this.config.model}`);
+            this.updateStatus(`Ready | Model: ${this.config.model} | Press F10 to rate response`);
             
         } catch (error) {
             this.chatBox.log(`{red-fg}Error: ${error.message}{/red-fg}`);
@@ -480,12 +517,16 @@ class OllamaChatsBlessed {
                      `F7  - Pull/download model\n` +
                      `F8  - Clear current chat\n` +
                      `F9  - Advanced settings\n` +
+                     `F10 - Rate last AI response\n` +
                      `\n{bold}Shift+F Keys:{/bold}\n` +
+                     `Shift+F1 - Browse character cards\n` +
                      `Shift+F2 - Save character card\n` +
                      `Shift+F3 - Load character card\n` +
                      `Shift+F4 - System prompt editor\n` +
                      `Shift+F5 - Instruction editor\n` +
+                     `Shift+F6 - Export data (various formats)\n` +
                      `Shift+F7 - Generate character\n` +
+                     `Shift+F9 - Manage memories (RAG)\n` +
                      `Ctrl+C - Quit application\n\n` +
                      `{bold}Usage:{/bold}\n` +
                      `Type your message and press Enter to send.\n` +
@@ -1516,6 +1557,501 @@ class OllamaChatsBlessed {
 
         traitsInput.focus();
         this.screen.render();
+    }
+
+    browseCharacters() {
+        // Load available character files from current directory
+        const characterFiles = fs.readdirSync('.').filter(file => 
+            file.startsWith('character-') && file.endsWith('.json')
+        );
+
+        if (characterFiles.length === 0) {
+            this.chatBox.log('{yellow-fg}No character cards found. Create some first using Shift+F2.{/yellow-fg}');
+            this.screen.render();
+            return;
+        }
+
+        const list = blessed.list({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '80%',
+            height: '60%',
+            items: characterFiles.map(file => {
+                try {
+                    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+                    return `${data.name || 'Unknown'} - ${file}`;
+                } catch (e) {
+                    return `${file} (corrupted)`;
+                }
+            }),
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'cyan' },
+                selected: { bg: 'blue' }
+            },
+            label: ' Browse Character Cards ',
+            keys: true,
+            mouse: true
+        });
+
+        const actionsBox = blessed.box({
+            parent: list,
+            bottom: 2,
+            left: 2,
+            right: 2,
+            height: 3,
+            content: '{center}Press Enter to load, D to delete, Escape to cancel{/center}',
+            tags: true,
+            style: { fg: 'yellow' }
+        });
+
+        list.on('select', () => {
+            const selectedFile = characterFiles[list.selected];
+            this.loadCharacterByFilename(selectedFile);
+            list.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        list.key('d', () => {
+            const selectedFile = characterFiles[list.selected];
+            this.confirmDeleteCharacter(selectedFile, list);
+        });
+
+        list.on('cancel', () => {
+            list.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        list.focus();
+        this.screen.render();
+    }
+
+    confirmDeleteCharacter(filename, parentList) {
+        const confirm = blessed.question({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '50%',
+            height: '20%',
+            content: `Delete character file: ${filename}?\nThis action cannot be undone.`,
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'red' }
+            }
+        });
+
+        confirm.ask('', (err, value) => {
+            if (value && value.toLowerCase().startsWith('y')) {
+                try {
+                    fs.unlinkSync(filename);
+                    this.chatBox.log(`{green-fg}Character file ${filename} deleted{/green-fg}`);
+                } catch (error) {
+                    this.chatBox.log(`{red-fg}Error deleting file: ${error.message}{/red-fg}`);
+                }
+            }
+            parentList.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+    }
+
+    loadCharacterByFilename(filename) {
+        try {
+            if (fs.existsSync(filename)) {
+                const characterCard = JSON.parse(fs.readFileSync(filename, 'utf8'));
+                
+                this.aiNick = characterCard.name || this.aiNick;
+                this.config.systemPrompt = characterCard.systemPrompt || '';
+                this.config.instruction = characterCard.instruction || '';
+                this.config.temperature = characterCard.temperature || 0.8;
+                this.config.num_ctx = characterCard.num_ctx || 2048;
+                this.config.top_k = characterCard.top_k || 40;
+                this.config.top_p = characterCard.top_p || 0.9;
+                
+                this.chatBox.log(`{green-fg}Character loaded: ${characterCard.name || 'Unknown'}{/green-fg}`);
+                this.updateInfoPanel();
+            }
+        } catch (error) {
+            this.chatBox.log(`{red-fg}Error loading character: ${error.message}{/red-fg}`);
+        }
+    }
+
+    exportData() {
+        const form = blessed.form({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '70%',
+            height: '60%',
+            content: '',
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'cyan' }
+            },
+            label: ' Export Data '
+        });
+
+        blessed.text({
+            parent: form,
+            top: 1,
+            left: 2,
+            content: 'Export Options:'
+        });
+
+        const chatBtn = blessed.button({
+            parent: form,
+            top: 3,
+            left: 2,
+            width: 20,
+            height: 3,
+            content: 'Export Chat',
+            border: { type: 'line' },
+            style: { bg: 'blue', fg: 'white' }
+        });
+
+        const characterBtn = blessed.button({
+            parent: form,
+            top: 7,
+            left: 2,
+            width: 20,
+            height: 3,
+            content: 'Export Character',
+            border: { type: 'line' },
+            style: { bg: 'green', fg: 'white' }
+        });
+
+        const allDataBtn = blessed.button({
+            parent: form,
+            top: 11,
+            left: 2,
+            width: 20,
+            height: 3,
+            content: 'Export All Data',
+            border: { type: 'line' },
+            style: { bg: 'magenta', fg: 'white' }
+        });
+
+        const cancelBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            right: 2,
+            width: 10,
+            height: 3,
+            content: 'Cancel',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        chatBtn.on('press', () => {
+            this.saveChat();
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        characterBtn.on('press', () => {
+            this.saveCharacterCard();
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        allDataBtn.on('press', () => {
+            this.exportAllData();
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        cancelBtn.on('press', () => {
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        chatBtn.focus();
+        this.screen.render();
+    }
+
+    exportAllData() {
+        const allData = {
+            config: this.config,
+            nick: this.nick,
+            aiNick: this.aiNick,
+            turns: this.turns,
+            memories: this.memories,
+            timestamp: new Date().toISOString(),
+            version: '1.9.10'
+        };
+
+        const filename = `ollama-full-export-${Date.now()}.json`;
+        try {
+            fs.writeFileSync(filename, JSON.stringify(allData, null, 2));
+            this.chatBox.log(`{green-fg}All data exported to ${filename}{/green-fg}`);
+        } catch (error) {
+            this.chatBox.log(`{red-fg}Error exporting data: ${error.message}{/red-fg}`);
+        }
+    }
+
+    manageMemories() {
+        const form = blessed.form({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '90%',
+            height: '80%',
+            content: '',
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'cyan' }
+            },
+            label: ' Memory Management (RAG System) '
+        });
+
+        blessed.text({
+            parent: form,
+            top: 1,
+            left: 2,
+            content: 'Character Memories (one per line, will be used for context retrieval):'
+        });
+
+        const memoriesTextarea = blessed.textarea({
+            parent: form,
+            top: 3,
+            left: 2,
+            width: '95%',
+            height: '60%',
+            value: this.memories.join('\n'),
+            border: { type: 'line' },
+            style: { fg: 'white', bg: 'black' },
+            inputOnFocus: true,
+            scrollable: true,
+            mouse: true
+        });
+
+        blessed.text({
+            parent: form,
+            bottom: 8,
+            left: 2,
+            content: 'These memories will be searched when generating responses to provide relevant context.'
+        });
+
+        const saveBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            left: 2,
+            width: 10,
+            height: 3,
+            content: 'Save',
+            border: { type: 'line' },
+            style: { bg: 'green', fg: 'white' }
+        });
+
+        const clearBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            left: 15,
+            width: 10,
+            height: 3,
+            content: 'Clear',
+            border: { type: 'line' },
+            style: { bg: 'yellow', fg: 'black' }
+        });
+
+        const cancelBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            right: 2,
+            width: 10,
+            height: 3,
+            content: 'Cancel',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        saveBtn.on('press', () => {
+            this.memories = memoriesTextarea.value.split('\n').filter(line => line.trim());
+            this.chatBox.log(`{green-fg}Saved ${this.memories.length} memories{/green-fg}`);
+            
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        clearBtn.on('press', () => {
+            memoriesTextarea.setValue('');
+            memoriesTextarea.focus();
+            this.screen.render();
+        });
+
+        cancelBtn.on('press', () => {
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        memoriesTextarea.focus();
+        this.screen.render();
+    }
+
+    rateLastResponse() {
+        if (this.turns.length === 0 || this.turns[this.turns.length - 1].isUser) {
+            this.chatBox.log('{yellow-fg}No AI response to rate.{/yellow-fg}');
+            this.screen.render();
+            return;
+        }
+
+        const form = blessed.form({
+            parent: this.screen,
+            top: 'center',
+            left: 'center',
+            width: '60%',
+            height: '40%',
+            content: '',
+            tags: true,
+            border: { type: 'line' },
+            style: {
+                fg: 'white',
+                bg: 'black',
+                border: { fg: 'cyan' }
+            },
+            label: ' Rate Last Response '
+        });
+
+        blessed.text({
+            parent: form,
+            top: 1,
+            left: 2,
+            content: 'Rate the last AI response:'
+        });
+
+        const excellentBtn = blessed.button({
+            parent: form,
+            top: 4,
+            left: 2,
+            width: 15,
+            height: 3,
+            content: '⭐⭐⭐ Excellent',
+            border: { type: 'line' },
+            style: { bg: 'green', fg: 'white' }
+        });
+
+        const goodBtn = blessed.button({
+            parent: form,
+            top: 8,
+            left: 2,
+            width: 15,
+            height: 3,
+            content: '⭐⭐ Good',
+            border: { type: 'line' },
+            style: { bg: 'blue', fg: 'white' }
+        });
+
+        const poorBtn = blessed.button({
+            parent: form,
+            top: 12,
+            left: 2,
+            width: 15,
+            height: 3,
+            content: '⭐ Poor',
+            border: { type: 'line' },
+            style: { bg: 'yellow', fg: 'black' }
+        });
+
+        const terribleBtn = blessed.button({
+            parent: form,
+            top: 16,
+            left: 2,
+            width: 15,
+            height: 3,
+            content: '💀 Terrible',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        const cancelBtn = blessed.button({
+            parent: form,
+            bottom: 2,
+            right: 2,
+            width: 10,
+            height: 3,
+            content: 'Cancel',
+            border: { type: 'line' },
+            style: { bg: 'red', fg: 'white' }
+        });
+
+        const rateResponse = (rating) => {
+            const lastTurn = this.turns[this.turns.length - 1];
+            lastTurn.rating = rating;
+            this.lastResponseRating = rating;
+            
+            const ratingText = {3: 'Excellent', 2: 'Good', 1: 'Poor', 0: 'Terrible'}[rating];
+            this.chatBox.log(`{green-fg}Response rated as: ${ratingText}{/green-fg}`);
+            
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        };
+
+        excellentBtn.on('press', () => rateResponse(3));
+        goodBtn.on('press', () => rateResponse(2));
+        poorBtn.on('press', () => rateResponse(1));
+        terribleBtn.on('press', () => rateResponse(0));
+
+        cancelBtn.on('press', () => {
+            form.destroy();
+            this.inputBox.focus();
+            this.screen.render();
+        });
+
+        excellentBtn.focus();
+        this.screen.render();
+    }
+
+    // Simple memory search (in a real implementation, you'd use embeddings)
+    findRelevantMemories(query) {
+        if (!this.memories || this.memories.length === 0) return [];
+        
+        const queryLower = query.toLowerCase();
+        const relevantMemories = [];
+        
+        for (const memory of this.memories) {
+            const memoryLower = memory.toLowerCase();
+            let relevanceScore = 0;
+            
+            // Simple keyword matching
+            const queryWords = queryLower.split(' ');
+            for (const word of queryWords) {
+                if (word.length > 2 && memoryLower.includes(word)) {
+                    relevanceScore += 1;
+                }
+            }
+            
+            if (relevanceScore > 0) {
+                relevantMemories.push({ memory, score: relevanceScore });
+            }
+        }
+        
+        // Sort by relevance and return top 3
+        return relevantMemories
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3)
+            .map(item => item.memory);
     }
 }
 
